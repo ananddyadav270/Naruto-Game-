@@ -1,0 +1,6 @@
+{
+  "name": "Naruto Ultimate Quiz",
+  "description": "Test Your Shinobi Knowledge across 50 progressive Naruto anime quiz levels with two attempts per question.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
