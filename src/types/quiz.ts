@@ -9,11 +9,51 @@ export type ScreenState =
   | 'GAME_OVER'
   | 'VICTORY';
 
-export type AvatarId = 'uzumaki' | 'uchiha' | 'kunoichi' | 'sensei';
+export type AvatarId =
+  | 'uzumaki'
+  | 'uchiha'
+  | 'kunoichi'
+  | 'sensei'
+  | 'sage'
+  | 'shadow'
+  | 'sand'
+  | 'yellowflash';
 
-export type ProfileFrameId = 'none' | 'orange' | 'gold' | 'red' | 'emerald' | 'sky' | 'rainbow';
+export type ProfileAvatarBgId =
+  | 'leaf'
+  | 'fire'
+  | 'lightning'
+  | 'sand'
+  | 'sage'
+  | 'void'
+  | 'cherry'
+  | 'sun';
 
-export type ProfileBannerId = 'default' | 'fire' | 'forest' | 'storm' | 'night' | 'sakura';
+export type ProfileFrameId =
+  | 'none'
+  | 'orange'
+  | 'gold'
+  | 'red'
+  | 'emerald'
+  | 'sky'
+  | 'rainbow'
+  | 'wood'
+  | 'chunin'
+  | 'jonin'
+  | 'anbu'
+  | 'hokage'
+  | 'sage'
+  | 'celestial';
+
+export type ProfileBannerId =
+  | 'default'
+  | 'fire'
+  | 'forest'
+  | 'storm'
+  | 'night'
+  | 'sakura'
+  | 'hokage_rock'
+  | 'valley_end';
 
 export type ProfileAccentId = 'orange' | 'red' | 'gold' | 'emerald' | 'sky' | 'purple';
 
@@ -21,7 +61,10 @@ export interface ShinobiAvatar {
   id: AvatarId;
   name: string;
   title: string;
+  village: string;
+  quote: string;
   imageSrc: string;
+  svgFallback?: string;
   accentClass: string;
 }
 
@@ -29,6 +72,7 @@ export interface PlayerProfile {
   playerId: string;
   playerName: string;
   avatarId: AvatarId;
+  avatarBgId?: ProfileAvatarBgId;
   frameId: ProfileFrameId;
   bannerId: ProfileBannerId;
   accentId: ProfileAccentId;

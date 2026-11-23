@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
-import { Home, RotateCcw, Trophy, Volume2, VolumeX } from 'lucide-react';
+import { Award, Home, RotateCcw, Trophy, Volume2, VolumeX } from 'lucide-react';
+import { HeaderNavigation } from './components/HeaderNavigation';
 import { ConfirmLeaveModal } from './components/ConfirmLeaveModal';
 import { ConfirmResetModal } from './components/ConfirmResetModal';
 import { GameOverScreen } from './components/GameOverScreen';
@@ -12,13 +13,26 @@ import {
   ChakraGemIcon,
   ImageWithFallback,
   KonohaLeafSymbol,
+  RankBadge,
+  ShinobiAvatarDisplay,
   ShinobiCoinIcon,
 } from './components/ShinobiGraphics';
 import { StageTransitionScreen } from './components/StageTransitionScreen';
 import { VictoryScreen } from './components/VictoryScreen';
 import { getAvatarById } from './data/avatars';
 import { getStageForLevel, HERO_BACKDROP_IMAGE, QUIZ_QUESTIONS } from './data/questions';
-import { AvatarId, LevelRewardBreakdown, PlayerProfile, ProfileAccentId, ProfileBannerId, ProfileFrameId, SavedProgress, ScreenState } from './types/quiz';
+import {
+  AvatarId,
+  LevelRewardBreakdown,
+  PlayerProfile,
+  ProfileAccentId,
+  ProfileAvatarBgId,
+  ProfileBannerId,
+  ProfileFrameId,
+  SavedProgress,
+  ScreenState,
+} from './types/quiz';
+import { getAccentClasses } from './utils/profileUtils';
 import { calculateLevelReward } from './utils/rewards';
 import { soundEngine } from './utils/sound';
 import {
@@ -30,7 +44,6 @@ import {
   saveProfile,
 } from './utils/storage';
 import { useAnimatedNumber } from './utils/useAnimatedNumber';
-import { getAccentClasses } from './utils/profileUtils';
 
 const STAGE_START_LEVELS = new Set([1, 16, 31, 46]);
 
@@ -45,9 +58,9 @@ export default function App() {
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
 
-  const animatedHeaderScore = useAnimatedNumber(progress.totalScore, 450);
-  const animatedHeaderCoins = useAnimatedNumber(progress.totalCoins, 450);
-  const animatedHeaderGems  = useAnimatedNumber(progress.totalGems, 450);
+  const animatedHeaderScore = useAnimatedNumber(progress.totalScore, 400);
+  const animatedHeaderCoins = useAnimatedNumber(progress.totalCoins, 400);
+  const animatedHeaderGems = useAnimatedNumber(progress.totalGems, 400);
 
   const toggleMute = () => {
     const next = !muted;
@@ -136,11 +149,20 @@ export default function App() {
   const handleUpdateProfile = (
     name: string,
     avatarId: AvatarId,
+    avatarBgId: ProfileAvatarBgId,
     frameId: ProfileFrameId,
     bannerId: ProfileBannerId,
-    accentId: ProfileAccentId,
+    accentId: ProfileAccentId
   ) => {
-    const updated: PlayerProfile = { ...profile, playerName: name, avatarId, frameId, bannerId, accentId };
+    const updated: PlayerProfile = {
+      ...profile,
+      playerName: name,
+      avatarId,
+      avatarBgId,
+      frameId,
+      bannerId,
+      accentId,
+    };
     setProfile(updated);
     saveProfile(updated);
   };
@@ -159,150 +181,61 @@ export default function App() {
   };
 
   const activeQuestion = QUIZ_QUESTIONS[currentLevel - 1] ?? QUIZ_QUESTIONS[0];
-  const activeStage    = getStageForLevel(currentLevel);
-  const avatar         = getAvatarById(profile.avatarId);
-  const accent         = getAccentClasses(profile.accentId);
-  const isPlaying      = screen === 'PLAYING';
+  const activeStage = getStageForLevel(currentLevel);
+  const accent = getAccentClasses(profile.accentId);
+  const isPlaying = screen === 'PLAYING';
 
   return (
-    <div className="relative min-h-screen min-h-dvh flex flex-col overflow-x-hidden" style={{ background: '#120e08' }}>
-
-      {/* ── Cinematic Background ── */}
+    <div
+      className="relative min-h-screen min-h-dvh flex flex-col overflow-x-hidden selection:bg-orange-500/30 selection:text-orange-200"
+      style={{ backgroundColor: '#0e0c14' }}
+    >
+      {/* ── High-End Atmospheric Gaming Backdrop ── */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
         <ImageWithFallback
           src={HERO_BACKDROP_IMAGE}
           alt="Hidden Leaf Village backdrop"
-          className="h-full w-full object-cover opacity-[0.12] scale-[1.04]"
+          className="h-full w-full object-cover opacity-[0.14] scale-105 filter blur-[1px]"
         />
-        {/* Warm gradient layer */}
-        <div className="absolute inset-0"
-          style={{ background: 'linear-gradient(160deg, #1a1208 0%, #2d1a08 35%, #3a1806 55%, #1a0a0a 100%)' }} />
-        {/* Subtle vignette */}
-        <div className="absolute inset-0 opacity-60"
-          style={{ background: 'radial-gradient(ellipse at 70% 20%, rgba(249,115,22,0.07) 0%, transparent 55%)' }} />
-        <div className="absolute inset-0 opacity-40"
-          style={{ background: 'radial-gradient(ellipse at 10% 80%, rgba(220,38,38,0.06) 0%, transparent 50%)' }} />
+        {/* Deep Chakra Atmospheric Gradient */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              'linear-gradient(165deg, #13101c 0%, #1a1524 35%, #221727 65%, #100b14 100%)',
+            mixBlendMode: 'multiply',
+          }}
+        />
+        {/* Top-Right Warm Konoha Fire Glow */}
+        <div
+          className="absolute -top-32 -right-32 h-[500px] w-[500px] rounded-full opacity-30 blur-3xl pointer-events-none"
+          style={{ background: 'radial-gradient(circle, rgba(255,122,26,0.5) 0%, transparent 70%)' }}
+        />
+        {/* Bottom-Left Sharingan Crimson Glow */}
+        <div
+          className="absolute -bottom-32 -left-32 h-[500px] w-[500px] rounded-full opacity-20 blur-3xl pointer-events-none"
+          style={{ background: 'radial-gradient(circle, rgba(220,38,38,0.5) 0%, transparent 70%)' }}
+        />
       </div>
 
-      {/* ── Embers ── */}
+      {/* ── Floating Chakra Embers ── */}
       <AmbientEmbers />
 
-      {/* ─────────── NAVBAR ─────────── */}
-      <header className="sticky top-0 z-40 safe-top" role="banner">
-        <div className="surface-dark">
-          <div className="mx-auto max-w-6xl px-3 sm:px-5 lg:px-8 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-4">
-
-            {/* Brand */}
-            <button
-              type="button"
-              onClick={handleRequestHomeNavigation}
-              className="inline-flex items-center gap-2 cursor-pointer group min-w-0 shrink-0"
-              aria-label="Return to home"
-            >
-              <KonohaLeafSymbol size={20} className="text-orange-400 shrink-0 transition-transform group-hover:scale-110" />
-              <div className="flex flex-col leading-none min-w-0">
-                <span className="font-display text-sm sm:text-xl lg:text-2xl font-bold tracking-wide uppercase text-orange-50 truncate">
-                  Naruto Ultimate Quiz
-                </span>
-                <span className="hidden sm:block text-[9px] font-mono tracking-[0.2em] text-orange-400/60 uppercase">
-                  50 Shinobi Trials
-                </span>
-              </div>
-            </button>
-
-            {/* Desktop HUD */}
-            <div className="hidden lg:flex items-center gap-2">
-              <div className="hud-pill">
-                <Trophy className="h-3.5 w-3.5 text-orange-400" />
-                <span className="font-mono text-orange-50 tabular-nums">{animatedHeaderScore.toLocaleString()}</span>
-              </div>
-              <div className="hud-pill">
-                <ShinobiCoinIcon size={14} />
-                <span className="font-mono text-amber-200 tabular-nums">{animatedHeaderCoins.toLocaleString()}</span>
-              </div>
-              <div className="hud-pill">
-                <ChakraGemIcon size={14} />
-                <span className="font-mono text-sky-200 tabular-nums">{animatedHeaderGems.toLocaleString()}</span>
-              </div>
-            </div>
-
-            {/* Controls */}
-            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-              {/* Profile */}
-              <button
-                type="button"
-                onClick={() => setScreen('PROFILE')}
-                title="Open Player Profile"
-                className={`inline-flex items-center gap-1.5 sm:gap-2 pl-1 pr-2.5 py-1 rounded-xl transition-all cursor-pointer ${
-                  screen === 'PROFILE'
-                    ? 'bg-orange-500/20 border border-orange-400/40 text-orange-100'
-                    : 'border border-white/10 hover:border-orange-400/30 text-orange-50/80'
-                }`}
-                style={screen !== 'PROFILE' ? { background: 'rgba(253,248,240,0.07)' } : undefined}
-              >
-                <div className={`h-6 w-6 sm:h-7 sm:w-7 overflow-hidden rounded-lg border-2 shrink-0 ${accent.borderClass}`}>
-                  <ImageWithFallback src={avatar.imageSrc} alt={profile.playerName} className="h-full w-full object-cover" />
-                </div>
-                <span className="hidden sm:inline text-xs font-semibold max-w-[80px] lg:max-w-[110px] truncate">
-                  {profile.playerName}
-                </span>
-              </button>
-
-              {/* Mute */}
-              <button
-                type="button"
-                onClick={toggleMute}
-                aria-label={muted ? 'Unmute' : 'Mute'}
-                className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl border border-white/10 flex items-center justify-center transition-colors cursor-pointer"
-                style={{ background: 'rgba(253,248,240,0.07)' }}
-              >
-                {muted ? <VolumeX className="h-3.5 w-3.5 text-orange-50/40" /> : <Volume2 className="h-3.5 w-3.5 text-orange-400" />}
-              </button>
-
-              {/* Home / Reset */}
-              {screen !== 'HOME' ? (
-                <button
-                  type="button"
-                  onClick={handleRequestHomeNavigation}
-                  className="btn-dark inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap cursor-pointer"
-                >
-                  <Home className="h-3.5 w-3.5 text-orange-400 shrink-0" />
-                  <span className="hidden sm:inline">Home</span>
-                </button>
-              ) : (
-                (progress.completedLevels.length > 0 || progress.highestUnlockedLevel > 1) && (
-                  <button
-                    type="button"
-                    onClick={() => setIsResetModalOpen(true)}
-                    className="btn-dark inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap cursor-pointer"
-                  >
-                    <RotateCcw className="h-3.5 w-3.5 shrink-0" />
-                    <span className="hidden sm:inline">Reset</span>
-                  </button>
-                )
-              )}
-            </div>
-          </div>
-
-          {/* Mobile HUD while playing */}
-          {isPlaying && (
-            <div className="lg:hidden flex items-center justify-center gap-3 pb-2 px-4">
-              <div className="hud-pill text-xs">
-                <Trophy className="h-3 w-3 text-orange-400" />
-                <span className="font-mono text-orange-50 tabular-nums">{animatedHeaderScore.toLocaleString()}</span>
-              </div>
-              <div className="hud-pill text-xs">
-                <ShinobiCoinIcon size={12} />
-                <span className="font-mono text-amber-200 tabular-nums">{animatedHeaderCoins.toLocaleString()}</span>
-              </div>
-              <div className="hud-pill text-xs">
-                <ChakraGemIcon size={12} />
-                <span className="font-mono text-sky-200 tabular-nums">{animatedHeaderGems.toLocaleString()}</span>
-              </div>
-            </div>
-          )}
-        </div>
-      </header>
+      {/* ─────────── TACTICAL SHINOBI HEADER & HUD ─────────── */}
+      <HeaderNavigation
+        screen={screen}
+        profile={profile}
+        progress={progress}
+        muted={muted}
+        onToggleMute={toggleMute}
+        onNavigateHome={handleRequestHomeNavigation}
+        onNavigateProfile={() => setScreen('PROFILE')}
+        onNavigateVictory={() => setScreen('VICTORY')}
+        onRequestReset={() => setIsResetModalOpen(true)}
+        animatedScore={animatedHeaderScore}
+        animatedCoins={animatedHeaderCoins}
+        animatedGems={animatedHeaderGems}
+      />
 
       {/* ── Screen Router ── */}
       <main className="relative z-10 flex-1 flex flex-col justify-center" role="main">
@@ -380,7 +313,7 @@ export default function App() {
         )}
       </main>
 
-      {/* ── Modals ── */}
+      {/* ── Dialog Modals ── */}
       <ConfirmResetModal
         isOpen={isResetModalOpen}
         completedCount={progress.completedLevels.length}

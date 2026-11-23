@@ -1,451 +1,715 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Award, Check, Edit3, Home, RotateCcw, Shield, Target, Trophy, X } from 'lucide-react';
-import { getAvatarById, SHINOBI_AVATARS } from '../data/avatars';
+import {
+  ArrowLeft,
+  Award,
+  Check,
+  ChevronRight,
+  Flame,
+  Gamepad2,
+  Home,
+  Palette,
+  RotateCcw,
+  Save,
+  Shield,
+  Sparkles,
+  Star,
+  Target,
+  Trophy,
+  User,
+  X,
+} from 'lucide-react';
+import { AVATAR_BG_OPTIONS, getAvatarBgById, getAvatarById, SHINOBI_AVATARS } from '../data/avatars';
 import { STAGES } from '../data/questions';
-import { AvatarId, PlayerProfile, ProfileAccentId, ProfileBannerId, ProfileFrameId, SavedProgress } from '../types/quiz';
-import { computeQuizStats } from '../utils/storage';
+import {
+  AvatarId,
+  PlayerProfile,
+  ProfileAccentId,
+  ProfileAvatarBgId,
+  ProfileBannerId,
+  ProfileFrameId,
+  SavedProgress,
+} from '../types/quiz';
 import {
   getAccentClasses,
   getAccentLabel,
   getBannerLabel,
   getBannerStyle,
   getFrameLabel,
-  getFrameStyle,
 } from '../utils/profileUtils';
+import { computeQuizStats } from '../utils/storage';
 import { useAnimatedNumber } from '../utils/useAnimatedNumber';
 import {
   ChakraGemIcon,
-  ImageWithFallback,
   KonohaLeafSymbol,
   RankBadge,
+  ShinobiAvatarDisplay,
   ShinobiCoinIcon,
-  WarmDivider,
 } from './ShinobiGraphics';
 
 interface ProfileScreenProps {
   profile: PlayerProfile;
   progress: SavedProgress;
-  onUpdateProfile: (name: string, avatarId: AvatarId, frameId: ProfileFrameId, bannerId: ProfileBannerId, accentId: ProfileAccentId) => void;
+  onUpdateProfile: (
+    name: string,
+    avatarId: AvatarId,
+    avatarBgId: ProfileAvatarBgId,
+    frameId: ProfileFrameId,
+    bannerId: ProfileBannerId,
+    accentId: ProfileAccentId
+  ) => void;
   onBackHome: () => void;
   onContinueGame: () => void;
 }
 
-const FRAME_OPTIONS: ProfileFrameId[]  = ['none', 'orange', 'gold', 'red', 'emerald', 'sky', 'rainbow'];
-const BANNER_OPTIONS: ProfileBannerId[] = ['default', 'fire', 'forest', 'storm', 'night', 'sakura'];
-const ACCENT_OPTIONS: ProfileAccentId[] = ['orange', 'red', 'gold', 'emerald', 'sky', 'purple'];
+const FRAME_OPTIONS: { id: ProfileFrameId; label: string; tag: string }[] = [
+  { id: 'hokage', label: 'Hokage Crest', tag: 'Legendary' },
+  { id: 'sage', label: 'Sage Aura', tag: 'Mythic' },
+  { id: 'celestial', label: 'Celestial Seal', tag: 'Exotic' },
+  { id: 'anbu', label: 'Anbu Shadow', tag: 'Special Ops' },
+  { id: 'jonin', label: 'Jonin Silver', tag: 'Elite' },
+  { id: 'chunin', label: 'Chunin Plate', tag: 'Shinobi' },
+  { id: 'wood', label: 'Academy Timber', tag: 'Rookie' },
+  { id: 'none', label: 'Classic Border', tag: 'Minimal' },
+];
 
-const ACCENT_HEX: Record<ProfileAccentId, string> = {
-  orange: '#f97316', red: '#ef4444', gold: '#f59e0b', emerald: '#10b981', sky: '#0ea5e9', purple: '#8b5cf6',
-};
-const FRAME_HEX: Record<ProfileFrameId, string> = {
-  none: '#e8d5b7', orange: '#f97316', gold: '#f59e0b', red: '#ef4444', emerald: '#10b981', sky: '#0ea5e9', rainbow: '#f97316',
-};
+const BANNER_OPTIONS: ProfileBannerId[] = [
+  'default',
+  'fire',
+  'forest',
+  'storm',
+  'night',
+  'sakura',
+  'hokage_rock',
+  'valley_end',
+];
+
+const ACCENT_OPTIONS: { id: ProfileAccentId; name: string; hex: string }[] = [
+  { id: 'orange', name: 'Naruto Orange', hex: '#ff7a1a' },
+  { id: 'gold', name: 'Hokage Gold', hex: '#f59e0b' },
+  { id: 'red', name: 'Sharingan Red', hex: '#ef4444' },
+  { id: 'emerald', name: 'Sage Emerald', hex: '#10b981' },
+  { id: 'sky', name: 'Chidori Cyan', hex: '#0ea5e9' },
+  { id: 'purple', name: 'Rinnegan Purple', hex: '#8b5cf6' },
+];
 
 export const ProfileScreen: React.FC<ProfileScreenProps> = ({
-  profile, progress, onUpdateProfile, onBackHome, onContinueGame,
+  profile,
+  progress,
+  onUpdateProfile,
+  onBackHome,
+  onContinueGame,
 }) => {
-  const [isEditing, setIsEditing]       = useState(false);
-  const [draftName, setDraftName]       = useState(profile.playerName);
-  const [draftAvatar, setDraftAvatar]   = useState<AvatarId>(profile.avatarId);
-  const [draftFrame, setDraftFrame]     = useState<ProfileFrameId>(profile.frameId ?? 'orange');
-  const [draftBanner, setDraftBanner]   = useState<ProfileBannerId>(profile.bannerId ?? 'default');
-  const [draftAccent, setDraftAccent]   = useState<ProfileAccentId>(profile.accentId ?? 'orange');
-  const [previewMode, setPreviewMode]   = useState(false);
+  const [activeTab, setActiveTab] = useState<'profile' | 'customize'>('profile');
+  const [draftName, setDraftName] = useState(profile.playerName);
+  const [draftAvatar, setDraftAvatar] = useState<AvatarId>(profile.avatarId);
+  const [draftAvatarBg, setDraftAvatarBg] = useState<ProfileAvatarBgId>(profile.avatarBgId ?? 'leaf');
+  const [draftFrame, setDraftFrame] = useState<ProfileFrameId>(profile.frameId ?? 'hokage');
+  const [draftBanner, setDraftBanner] = useState<ProfileBannerId>(profile.bannerId ?? 'default');
+  const [draftAccent, setDraftAccent] = useState<ProfileAccentId>(profile.accentId ?? 'orange');
+  const [savedNotification, setSavedNotification] = useState(false);
 
-  const stats         = computeQuizStats(progress);
-  const currentAvatar = getAvatarById(profile.avatarId);
-  const accent        = getAccentClasses(profile.accentId ?? 'orange');
+  const stats = computeQuizStats(progress);
+  const currentAccent = getAccentClasses(profile.accentId ?? 'orange');
+  const previewAccent = getAccentClasses(draftAccent);
 
-  const previewAvatar = getAvatarById(previewMode ? draftAvatar : profile.avatarId);
-  const previewAccent = getAccentClasses(previewMode ? draftAccent : (profile.accentId ?? 'orange'));
-  const previewFrame  = previewMode ? draftFrame : (profile.frameId ?? 'orange');
-  const previewBanner = previewMode ? draftBanner : (profile.bannerId ?? 'default');
-  const previewName   = previewMode ? (draftName.trim() || 'Konoha Shinobi') : profile.playerName;
+  const animatedScore = useAnimatedNumber(progress.totalScore);
+  const animatedCoins = useAnimatedNumber(progress.totalCoins);
+  const animatedGems = useAnimatedNumber(progress.totalGems);
 
-  const animatedScore      = useAnimatedNumber(progress.totalScore);
-  const animatedCoins      = useAnimatedNumber(progress.totalCoins);
-  const animatedGems       = useAnimatedNumber(progress.totalGems);
-  const animatedAccuracy   = useAnimatedNumber(stats.accuracyPercentage);
-  const animatedCompletion = useAnimatedNumber(stats.completionPercentage);
-
-  const handleOpenEdit = () => {
+  const handleOpenCustomize = () => {
     setDraftName(profile.playerName);
     setDraftAvatar(profile.avatarId);
-    setDraftFrame(profile.frameId ?? 'orange');
+    setDraftAvatarBg(profile.avatarBgId ?? 'leaf');
+    setDraftFrame(profile.frameId ?? 'hokage');
     setDraftBanner(profile.bannerId ?? 'default');
     setDraftAccent(profile.accentId ?? 'orange');
-    setPreviewMode(false);
-    setIsEditing(true);
+    setActiveTab('customize');
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSaveCustomization = (e: React.FormEvent) => {
     e.preventDefault();
-    const cleaned = draftName.trim().slice(0, 24) || 'Konoha Shinobi';
-    onUpdateProfile(cleaned, draftAvatar, draftFrame, draftBanner, draftAccent);
-    setDraftName(cleaned);
-    setIsEditing(false);
-    setPreviewMode(false);
+    const cleanName = draftName.trim().slice(0, 24) || 'Konoha Shinobi';
+    onUpdateProfile(cleanName, draftAvatar, draftAvatarBg, draftFrame, draftBanner, draftAccent);
+    setDraftName(cleanName);
+    setSavedNotification(true);
+    setTimeout(() => {
+      setSavedNotification(false);
+      setActiveTab('profile');
+    }, 700);
   };
 
   const handleRestoreDefaults = () => {
+    setDraftName('Konoha Shinobi');
     setDraftAvatar('uzumaki');
-    setDraftFrame('orange');
+    setDraftAvatarBg('leaf');
+    setDraftFrame('hokage');
     setDraftBanner('default');
     setDraftAccent('orange');
-    setDraftName('Konoha Shinobi');
-    setPreviewMode(true);
   };
 
+  const selectedAvatarData = getAvatarById(draftAvatar);
+
   return (
-    <div className="animate-screen-enter w-full" style={{ background: '#f5ede0', minHeight: 'calc(100dvh - 64px)' }}>
-      <div className="mx-auto max-w-5xl px-3 sm:px-5 lg:px-8 py-6 sm:py-8">
+    <div className="animate-screen-enter w-full pb-16 pt-4 sm:pt-6">
+      <div className="mx-auto max-w-6xl px-3 sm:px-6 lg:px-8">
+        {/* Navigation Breadcrumb Bar */}
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onBackHome}
+              className="btn-secondary inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold sm:text-sm"
+            >
+              <ArrowLeft className="h-4 w-4 text-orange-400" />
+              <span>Back to Dashboard</span>
+            </button>
+            <button
+              type="button"
+              onClick={onBackHome}
+              className="btn-secondary inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold text-white/70"
+            >
+              <Home className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Home</span>
+            </button>
+          </div>
 
-        {/* Nav row */}
-        <div className="flex flex-wrap items-center gap-2 mb-6">
-          <button type="button" onClick={onBackHome}
-            className="btn-ghost inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm font-semibold cursor-pointer">
-            <ArrowLeft className="h-3.5 w-3.5 text-orange-500 shrink-0" />
-            <span>Dashboard</span>
-          </button>
-          <button type="button" onClick={onBackHome}
-            className="btn-ghost inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm font-medium cursor-pointer">
-            <Home className="h-3.5 w-3.5 shrink-0" />
-            <span>Home</span>
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-
-          {/* ── LEFT: Profile Card + Edit ── */}
-          <div className="lg:col-span-5">
-
-            {/* Profile Display Card */}
-            <div className="rounded-3xl overflow-hidden shadow-xl mb-5" style={{ boxShadow: '0 12px 40px rgba(0,0,0,0.12)' }}>
-              {/* Banner */}
-              <div className="relative h-28 sm:h-32" style={getBannerStyle(previewBanner)}>
-                <div className="pointer-events-none absolute top-3 right-3 opacity-20">
-                  <KonohaLeafSymbol size={40} className="text-white" />
-                </div>
-                {/* Avatar */}
-                <div className="absolute -bottom-8 left-6">
-                  <div className="relative h-20 w-20 overflow-hidden rounded-2xl" style={getFrameStyle(previewFrame, FRAME_HEX[previewFrame])}>
-                    <ImageWithFallback src={previewAvatar.imageSrc} alt={previewAvatar.name} className="h-full w-full object-cover" />
-                  </div>
-                </div>
-              </div>
-
-              {/* Info section */}
-              <div className="surface-card pt-10 pb-5 px-5">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2 mb-1">
-                      <RankBadge rank={stats.shinobiRank} />
-                      <span className="text-[10px] font-mono text-amber-700/40">ID: {profile.playerId}</span>
-                    </div>
-                    <h2 className="font-display text-2xl sm:text-3xl font-bold uppercase text-[#1a1208] tracking-wide">
-                      {previewName}
-                    </h2>
-                    <p className={`text-xs font-semibold mt-0.5 ${previewAccent.textClass}`}>
-                      {previewAvatar.title}
-                    </p>
-                  </div>
-                </div>
-
-                {previewMode && (
-                  <div className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-orange-600 bg-orange-50 border border-orange-200 rounded-xl px-3 py-1">
-                    <span>Preview Mode</span>
-                  </div>
-                )}
-
-                <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-[#5c4a2e]">
-                  <span>Level <strong className="font-mono text-[#1a1208]">{progress.highestUnlockedLevel}</strong></span>
-                  <span className="text-amber-700/30">·</span>
-                  <span>Cleared <strong className="font-mono text-emerald-700">{stats.totalCompleted}/50</strong></span>
-                  <span className="text-amber-700/30">·</span>
-                  <span>Accuracy <strong className="font-mono text-orange-600">{stats.accuracyPercentage}%</strong></span>
-                </div>
-
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {!isEditing ? (
-                    <>
-                      <button type="button" onClick={handleOpenEdit}
-                        className="btn-primary inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold cursor-pointer">
-                        <Edit3 className="h-3.5 w-3.5 shrink-0" />
-                        <span>Customize Profile</span>
-                      </button>
-                      <button type="button" onClick={onContinueGame}
-                        className="btn-ghost inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold cursor-pointer">
-                        <span>Play Level {progress.highestUnlockedLevel}</span>
-                      </button>
-                    </>
-                  ) : (
-                    <button type="button" onClick={() => { setIsEditing(false); setPreviewMode(false); }}
-                      className="btn-ghost inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold cursor-pointer">
-                      <X className="h-3.5 w-3.5 shrink-0" />
-                      <span>Cancel Edit</span>
-                    </button>
-                  )}
-                </div>
-              </div>
+          <div className="flex items-center gap-2">
+            <div className="flex rounded-xl bg-white/5 p-1 border border-white/10">
+              <button
+                type="button"
+                onClick={() => setActiveTab('profile')}
+                className={`flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all cursor-pointer ${
+                  activeTab === 'profile'
+                    ? 'bg-gradient-to-r from-orange-500 to-amber-600 text-white shadow-md'
+                    : 'text-white/60 hover:text-white'
+                }`}
+              >
+                <User className="h-3.5 w-3.5" />
+                <span>Shinobi Dossier</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleOpenCustomize}
+                className={`flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all cursor-pointer ${
+                  activeTab === 'customize'
+                    ? 'bg-gradient-to-r from-orange-500 to-amber-600 text-white shadow-md'
+                    : 'text-white/60 hover:text-white'
+                }`}
+              >
+                <Palette className="h-3.5 w-3.5" />
+                <span>Customize Profile</span>
+              </button>
             </div>
 
-            {/* Stats Cards */}
-            <div className="grid grid-cols-3 gap-2.5 mb-5">
-              {[
-                { label: 'Score',  val: animatedScore.toLocaleString(), icon: <Trophy className="h-4 w-4 text-orange-500" />, cls: 'surface-orange', textCls: 'text-orange-800' },
-                { label: 'Coins',  val: animatedCoins.toLocaleString(), icon: <ShinobiCoinIcon size={18} />,                  cls: 'surface-gold',   textCls: 'text-amber-800' },
-                { label: 'Gems',   val: animatedGems.toLocaleString(),  icon: <ChakraGemIcon size={18} />,                   cls: 'surface-sky',    textCls: 'text-sky-800'   },
-              ].map((s) => (
-                <div key={s.label} className={`${s.cls} rounded-2xl p-3 text-center`}>
-                  <div className="flex justify-center mb-1">{s.icon}</div>
-                  <div className={`font-mono text-lg font-bold tabular-nums ${s.textCls}`}>{s.val}</div>
-                  <div className="text-[10px] text-current opacity-50">{s.label}</div>
+            <button
+              type="button"
+              onClick={onContinueGame}
+              className="btn-primary inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold shadow-lg"
+            >
+              <Gamepad2 className="h-3.5 w-3.5" />
+              <span>Play Lv.{progress.highestUnlockedLevel}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* ════ MAIN GRID ════ */}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+          {/* ── LEFT: LIVE PLAYER HERO CARD ── */}
+          <div className="lg:col-span-5">
+            <div className="sticky top-20 space-y-5">
+              {/* Profile Card */}
+              <div className="overflow-hidden rounded-3xl border border-white/15 bg-[#171421] shadow-2xl">
+                {/* Banner */}
+                <div
+                  className="relative h-32 sm:h-36 transition-all duration-300"
+                  style={getBannerStyle(activeTab === 'customize' ? draftBanner : profile.bannerId)}
+                >
+                  <div className="pointer-events-none absolute right-4 top-4 opacity-25">
+                    <KonohaLeafSymbol size={60} className="text-white" />
+                  </div>
+                  <div className="absolute bottom-2 right-4 rounded-full bg-black/60 px-2.5 py-1 text-[10px] font-mono font-bold tracking-wider uppercase text-amber-200/90 backdrop-blur-md">
+                    {getBannerLabel(activeTab === 'customize' ? draftBanner : profile.bannerId)}
+                  </div>
+
+                  {/* Avatar Anchor */}
+                  <div className="absolute -bottom-10 left-6 sm:left-8">
+                    <ShinobiAvatarDisplay
+                      avatarId={activeTab === 'customize' ? draftAvatar : profile.avatarId}
+                      avatarBgId={activeTab === 'customize' ? draftAvatarBg : profile.avatarBgId}
+                      frameId={activeTab === 'customize' ? draftFrame : profile.frameId}
+                      size="xl"
+                      showAura
+                    />
+                  </div>
                 </div>
-              ))}
+
+                {/* Profile Info */}
+                <div className="px-6 pb-6 pt-12 sm:px-8">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <div className="mb-1 flex items-center gap-2">
+                        <RankBadge rank={stats.shinobiRank} />
+                        <span className="font-mono text-[11px] text-orange-300/60">
+                          {profile.playerId}
+                        </span>
+                      </div>
+                      <h1 className="font-display text-3xl sm:text-4xl font-bold uppercase tracking-tight text-white">
+                        {activeTab === 'customize' ? draftName || 'Konoha Shinobi' : profile.playerName}
+                      </h1>
+                      <p
+                        className="mt-0.5 text-xs font-semibold"
+                        style={{
+                          color: (activeTab === 'customize' ? previewAccent : currentAccent).hex,
+                        }}
+                      >
+                        {
+                          getAvatarById(activeTab === 'customize' ? draftAvatar : profile.avatarId)
+                            .title
+                        }
+                      </p>
+                    </div>
+
+                    {activeTab === 'profile' && (
+                      <button
+                        type="button"
+                        onClick={handleOpenCustomize}
+                        className="btn-secondary inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold"
+                      >
+                        <Palette className="h-3.5 w-3.5 text-orange-400" />
+                        <span>Edit Style</span>
+                      </button>
+                    )}
+                  </div>
+
+                  <p className="mt-3 text-xs italic text-white/50 border-l-2 border-white/20 pl-3 leading-relaxed">
+                    "{getAvatarById(activeTab === 'customize' ? draftAvatar : profile.avatarId).quote}"
+                  </p>
+
+                  <div className="mt-5 grid grid-cols-3 gap-2.5 border-t border-white/10 pt-4 text-center">
+                    <div className="rounded-2xl bg-white/5 p-2.5 border border-white/8">
+                      <div className="text-[10px] uppercase tracking-wider text-white/40">Level</div>
+                      <div className="font-mono text-lg font-bold text-orange-400 tabular-nums">
+                        {progress.highestUnlockedLevel}
+                        <span className="text-xs text-white/40">/50</span>
+                      </div>
+                    </div>
+                    <div className="rounded-2xl bg-white/5 p-2.5 border border-white/8">
+                      <div className="text-[10px] uppercase tracking-wider text-white/40">Cleared</div>
+                      <div className="font-mono text-lg font-bold text-emerald-400 tabular-nums">
+                        {stats.totalCompleted}
+                        <span className="text-xs text-white/40"> ({stats.completionPercentage}%)</span>
+                      </div>
+                    </div>
+                    <div className="rounded-2xl bg-white/5 p-2.5 border border-white/8">
+                      <div className="text-[10px] uppercase tracking-wider text-white/40">Accuracy</div>
+                      <div className="font-mono text-lg font-bold text-amber-300 tabular-nums">
+                        {stats.accuracyPercentage}%
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Currency Strip */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="surface-dark-card rounded-2xl p-3 text-center border border-orange-500/20">
+                  <div className="flex justify-center mb-1 text-orange-400">
+                    <Trophy className="h-4 w-4" />
+                  </div>
+                  <div className="font-mono text-lg font-bold text-orange-200 tabular-nums">
+                    {animatedScore.toLocaleString()}
+                  </div>
+                  <div className="text-[10px] text-orange-400/70 font-semibold uppercase tracking-wider">
+                    Total Score
+                  </div>
+                </div>
+
+                <div className="surface-dark-card rounded-2xl p-3 text-center border border-amber-500/20">
+                  <div className="flex justify-center mb-1">
+                    <ShinobiCoinIcon size={18} />
+                  </div>
+                  <div className="font-mono text-lg font-bold text-amber-200 tabular-nums">
+                    {animatedCoins.toLocaleString()}
+                  </div>
+                  <div className="text-[10px] text-amber-400/70 font-semibold uppercase tracking-wider">
+                    Coins
+                  </div>
+                </div>
+
+                <div className="surface-dark-card rounded-2xl p-3 text-center border border-sky-500/20">
+                  <div className="flex justify-center mb-1">
+                    <ChakraGemIcon size={18} />
+                  </div>
+                  <div className="font-mono text-lg font-bold text-sky-200 tabular-nums">
+                    {animatedGems.toLocaleString()}
+                  </div>
+                  <div className="text-[10px] text-sky-400/70 font-semibold uppercase tracking-wider">
+                    Chakra Gems
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* ── RIGHT: Edit Form or Stats ── */}
+          {/* ── RIGHT COLUMN: DOSSIER OR CUSTOMIZER ── */}
           <div className="lg:col-span-7">
+            {activeTab === 'customize' ? (
+              /* ════ PROFILE CUSTOMIZER TAB ════ */
+              <form
+                onSubmit={handleSaveCustomization}
+                className="surface-dark-card rounded-3xl p-5 sm:p-7 border border-white/15 shadow-2xl animate-panel-enter space-y-7"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
+                  <div>
+                    <h2 className="font-display text-2xl sm:text-3xl font-bold uppercase text-white flex items-center gap-2">
+                      <Palette className="h-6 w-6 text-orange-400" />
+                      <span>Customization Chamber</span>
+                    </h2>
+                    <p className="text-xs text-white/50">
+                      Personalize your identity. Changes update the live preview on the left.
+                    </p>
+                  </div>
 
-            {isEditing ? (
-              /* ── EDIT FORM ── */
-              <form onSubmit={handleSave} className="surface-card rounded-3xl p-5 sm:p-6 animate-panel-enter">
-                <div className="flex items-center justify-between mb-5">
-                  <h2 className="font-display text-2xl font-bold uppercase text-[#1a1208]">Customize Profile</h2>
                   <div className="flex items-center gap-2">
-                    <button type="button" onClick={() => setPreviewMode((p) => !p)}
-                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                        previewMode ? 'bg-orange-100 text-orange-700 border border-orange-300' : 'btn-ghost'
-                      }`}>
-                      {previewMode ? <Check className="h-3 w-3" /> : null}
-                      Preview
+                    <button
+                      type="button"
+                      onClick={handleRestoreDefaults}
+                      className="btn-secondary inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold text-white/70"
+                    >
+                      <RotateCcw className="h-3.5 w-3.5" />
+                      <span>Reset Defaults</span>
                     </button>
-                    <button type="button" onClick={handleRestoreDefaults}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold btn-ghost cursor-pointer">
-                      <RotateCcw className="h-3 w-3" />
-                      Defaults
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('profile')}
+                      className="btn-secondary rounded-xl p-1.5 text-white/60 hover:text-white"
+                      title="Cancel"
+                    >
+                      <X className="h-4 w-4" />
                     </button>
                   </div>
                 </div>
 
-                <div className="space-y-5">
-                  {/* Name */}
-                  <div>
-                    <label htmlFor="shinobi-name" className="block text-xs font-bold tracking-wider uppercase text-amber-700/60 mb-2">
-                      Shinobi Name (max 24 chars)
-                    </label>
+                {savedNotification && (
+                  <div className="animate-bounce-in rounded-2xl bg-emerald-500/20 border border-emerald-400/40 p-3 text-center text-sm font-bold text-emerald-300">
+                    ✓ Profile personalization saved permanently!
+                  </div>
+                )}
+
+                {/* 1. Shinobi Name */}
+                <div>
+                  <label
+                    htmlFor="shinobi-name-input"
+                    className="block text-xs font-bold uppercase tracking-wider text-orange-400 mb-2"
+                  >
+                    1. Shinobi Codename (Max 24 characters)
+                  </label>
+                  <div className="relative">
                     <input
-                      id="shinobi-name"
+                      id="shinobi-name-input"
                       type="text"
                       maxLength={24}
                       value={draftName}
-                      onChange={(e) => { setDraftName(e.target.value); setPreviewMode(true); }}
+                      onChange={(e) => setDraftName(e.target.value)}
                       placeholder="Enter shinobi name"
-                      className="w-full rounded-xl px-4 py-2.5 text-sm font-semibold text-[#1a1208] placeholder-amber-700/30 focus:outline-none transition-all"
-                      style={{ background: '#fdf8f0', border: '2px solid #e8d5b7', boxShadow: '0 2px 6px rgba(0,0,0,0.04)' }}
-                      onFocus={(e) => e.target.style.borderColor = '#f97316'}
-                      onBlur={(e) => e.target.style.borderColor = '#e8d5b7'}
+                      className="w-full rounded-2xl bg-white/5 border-2 border-white/15 px-4 py-3 text-sm sm:text-base font-semibold text-white placeholder-white/30 focus:border-orange-500 focus:outline-none transition-all shadow-inner"
                     />
-                  </div>
-
-                  {/* Avatar Selection */}
-                  <div>
-                    <div className="text-xs font-bold tracking-wider uppercase text-amber-700/60 mb-2">Select Avatar</div>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                      {SHINOBI_AVATARS.map((av) => {
-                        const sel = draftAvatar === av.id;
-                        return (
-                          <button key={av.id} type="button"
-                            onClick={() => { setDraftAvatar(av.id); setPreviewMode(true); }}
-                            className={`rounded-2xl p-2 border-2 text-left transition-all cursor-pointer ${
-                              sel ? 'border-orange-500 bg-orange-50 shadow-md' : 'border-amber-200 bg-white hover:border-orange-300'
-                            }`}>
-                            <div className="relative aspect-square overflow-hidden rounded-xl mb-1.5">
-                              <ImageWithFallback src={av.imageSrc} alt={av.name} className="h-full w-full object-cover" />
-                              {sel && (
-                                <div className="absolute top-1 right-1 h-5 w-5 rounded-full bg-orange-500 flex items-center justify-center">
-                                  <Check className="h-3 w-3 text-white" strokeWidth={3} />
-                                </div>
-                              )}
-                            </div>
-                            <div className="text-xs font-bold text-[#1a1208] truncate">{av.name}</div>
-                            <div className="text-[10px] text-amber-700/50 truncate">{av.title}</div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Profile Frame */}
-                  <div>
-                    <div className="text-xs font-bold tracking-wider uppercase text-amber-700/60 mb-2">Profile Frame</div>
-                    <div className="flex flex-wrap gap-2">
-                      {FRAME_OPTIONS.map((f) => {
-                        const sel = draftFrame === f;
-                        const hex = FRAME_HEX[f];
-                        return (
-                          <button key={f} type="button"
-                            onClick={() => { setDraftFrame(f); setPreviewMode(true); }}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border-2 transition-all cursor-pointer ${sel ? 'shadow-sm' : ''}`}
-                            style={{
-                              borderColor: sel ? hex : '#e8d5b7',
-                              background: sel ? `${hex}18` : '#fdf8f0',
-                              color: sel ? hex : '#9c7c50',
-                            }}>
-                            <span className="h-3 w-3 rounded-full" style={{ background: hex, boxShadow: `0 0 4px ${hex}80` }} />
-                            {getFrameLabel(f)}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Banner */}
-                  <div>
-                    <div className="text-xs font-bold tracking-wider uppercase text-amber-700/60 mb-2">Profile Banner</div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                      {BANNER_OPTIONS.map((b) => {
-                        const sel = draftBanner === b;
-                        return (
-                          <button key={b} type="button"
-                            onClick={() => { setDraftBanner(b); setPreviewMode(true); }}
-                            className={`relative h-10 rounded-xl overflow-hidden border-2 transition-all cursor-pointer ${sel ? 'border-orange-500 scale-105 shadow-md' : 'border-transparent'}`}
-                            style={getBannerStyle(b)}>
-                            <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-white/90 tracking-wide">
-                              {getBannerLabel(b)}
-                            </span>
-                            {sel && (
-                              <span className="absolute top-1 right-1 h-4 w-4 rounded-full bg-orange-500 flex items-center justify-center">
-                                <Check className="h-2.5 w-2.5 text-white" strokeWidth={3} />
-                              </span>
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Accent Color */}
-                  <div>
-                    <div className="text-xs font-bold tracking-wider uppercase text-amber-700/60 mb-2">Accent Color</div>
-                    <div className="flex flex-wrap gap-2">
-                      {ACCENT_OPTIONS.map((a) => {
-                        const sel = draftAccent === a;
-                        const hex = ACCENT_HEX[a];
-                        return (
-                          <button key={a} type="button"
-                            onClick={() => { setDraftAccent(a); setPreviewMode(true); }}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border-2 transition-all cursor-pointer ${sel ? 'shadow-sm' : ''}`}
-                            style={{
-                              borderColor: sel ? hex : '#e8d5b7',
-                              background: sel ? `${hex}18` : '#fdf8f0',
-                              color: sel ? hex : '#9c7c50',
-                            }}>
-                            <span className="h-3 w-3 rounded-full" style={{ background: hex }} />
-                            {getAccentLabel(a)}
-                          </button>
-                        );
-                      })}
-                    </div>
+                    <span className="absolute right-3.5 top-3.5 font-mono text-xs text-white/40">
+                      {draftName.length}/24
+                    </span>
                   </div>
                 </div>
 
-                <WarmDivider />
+                {/* 2. Shinobi Avatar Selection */}
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-orange-400 mb-2">
+                    2. Select Shinobi Avatar (8 Character Archetypes)
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                    {SHINOBI_AVATARS.map((av) => {
+                      const isSelected = draftAvatar === av.id;
+                      return (
+                        <button
+                          key={av.id}
+                          type="button"
+                          onClick={() => setDraftAvatar(av.id)}
+                          className={`group relative flex flex-col items-center rounded-2xl p-2.5 text-center transition-all cursor-pointer ${
+                            isSelected
+                              ? 'bg-orange-500/20 border-2 border-orange-400 shadow-[0_0_15px_rgba(255,122,26,0.4)]'
+                              : 'bg-white/5 border border-white/10 hover:border-white/30 hover:bg-white/10'
+                          }`}
+                        >
+                          {isSelected && (
+                            <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-orange-500 text-white shadow-md">
+                              <Check className="h-3 w-3 stroke-[3]" />
+                            </span>
+                          )}
+                          <div className="h-14 w-14 overflow-hidden rounded-xl border border-white/20 mb-2">
+                            <img
+                              src={av.imageSrc}
+                              alt={av.name}
+                              className="h-full w-full object-cover transition-transform group-hover:scale-110"
+                            />
+                          </div>
+                          <div className="text-xs font-bold text-white truncate max-w-full">
+                            {av.name}
+                          </div>
+                          <div className="text-[10px] text-white/50 truncate max-w-full">
+                            {av.village}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
 
-                {/* Save / Cancel */}
-                <div className="flex gap-2.5 mt-4">
-                  <button type="button"
-                    onClick={() => { setIsEditing(false); setPreviewMode(false); }}
-                    className="btn-ghost flex-1 px-4 py-3 rounded-xl text-sm font-semibold cursor-pointer">
-                    Cancel
+                {/* 3. Avatar Chakra Background */}
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-orange-400 mb-2">
+                    3. Avatar Chakra Aura Background
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                    {AVATAR_BG_OPTIONS.map((bg) => {
+                      const isSelected = draftAvatarBg === bg.id;
+                      return (
+                        <button
+                          key={bg.id}
+                          type="button"
+                          onClick={() => setDraftAvatarBg(bg.id)}
+                          className={`flex items-center gap-2.5 rounded-xl p-2.5 text-left transition-all cursor-pointer ${
+                            isSelected
+                              ? 'border-2 border-amber-400 bg-amber-500/20 shadow-md'
+                              : 'border border-white/10 bg-white/5 hover:bg-white/10'
+                          }`}
+                        >
+                          <span
+                            className="h-6 w-6 rounded-lg shrink-0 border border-white/30 shadow-inner"
+                            style={{ background: bg.cssBackground }}
+                          />
+                          <span className="text-xs font-bold text-white truncate">{bg.name}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* 4. Profile Frame */}
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-orange-400 mb-2">
+                    4. Profile Avatar Frame
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                    {FRAME_OPTIONS.map((frm) => {
+                      const isSelected = draftFrame === frm.id;
+                      return (
+                        <button
+                          key={frm.id}
+                          type="button"
+                          onClick={() => setDraftFrame(frm.id)}
+                          className={`flex flex-col rounded-xl p-2.5 text-left transition-all cursor-pointer ${
+                            isSelected
+                              ? 'border-2 border-orange-400 bg-orange-500/20 shadow-md'
+                              : 'border border-white/10 bg-white/5 hover:bg-white/10'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-1 mb-1">
+                            <span className="text-xs font-bold text-white truncate">{frm.label}</span>
+                            {isSelected && <Check className="h-3 w-3 text-orange-400 shrink-0" />}
+                          </div>
+                          <span className="text-[10px] font-mono text-white/50">{frm.tag}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* 5. Profile Banner */}
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-orange-400 mb-2">
+                    5. Profile Header Banner
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                    {BANNER_OPTIONS.map((banId) => {
+                      const isSelected = draftBanner === banId;
+                      return (
+                        <button
+                          key={banId}
+                          type="button"
+                          onClick={() => setDraftBanner(banId)}
+                          className={`group relative overflow-hidden rounded-xl p-2.5 text-left transition-all cursor-pointer border ${
+                            isSelected
+                              ? 'border-2 border-orange-400 shadow-md ring-2 ring-orange-400/30'
+                              : 'border-white/10 hover:border-white/30'
+                          }`}
+                          style={getBannerStyle(banId)}
+                        >
+                          <div className="relative z-10 flex items-center justify-between">
+                            <span className="text-xs font-bold text-white drop-shadow-md truncate">
+                              {getBannerLabel(banId)}
+                            </span>
+                            {isSelected && <Check className="h-3 w-3 text-orange-300 drop-shadow" />}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* 6. Accent Color */}
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-orange-400 mb-2">
+                    6. Theme Accent Glow
+                  </label>
+                  <div className="flex flex-wrap gap-2.5">
+                    {ACCENT_OPTIONS.map((acc) => {
+                      const isSelected = draftAccent === acc.id;
+                      return (
+                        <button
+                          key={acc.id}
+                          type="button"
+                          onClick={() => setDraftAccent(acc.id)}
+                          className={`inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold transition-all cursor-pointer ${
+                            isSelected
+                              ? 'border-2 border-white bg-white/15 text-white shadow-lg'
+                              : 'border border-white/10 bg-white/5 text-white/70 hover:bg-white/10 hover:text-white'
+                          }`}
+                        >
+                          <span
+                            className="h-3.5 w-3.5 rounded-full border border-white/40"
+                            style={{ backgroundColor: acc.hex }}
+                          />
+                          <span>{acc.name}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex flex-col sm:flex-row items-center gap-3 pt-4 border-t border-white/10">
+                  <button
+                    type="submit"
+                    className="btn-primary flex-1 w-full inline-flex items-center justify-center gap-2 rounded-2xl py-3.5 text-base font-bold shadow-xl cursor-pointer"
+                  >
+                    <Save className="h-4 w-4" />
+                    <span>Save Customization</span>
                   </button>
-                  <button type="submit"
-                    className="btn-primary flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold cursor-pointer">
-                    <Check className="h-4 w-4 shrink-0" />
-                    Save Profile
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('profile')}
+                    className="btn-secondary w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3.5 text-sm font-semibold cursor-pointer"
+                  >
+                    <span>Cancel</span>
                   </button>
                 </div>
               </form>
             ) : (
-              /* ── STATS VIEW ── */
-              <div className="space-y-4">
-
-                {/* Precision Card */}
-                <div className="surface-card rounded-3xl p-5 sm:p-6">
-                  <div className="flex items-center gap-2.5 mb-4">
-                    <div className="h-8 w-8 rounded-xl bg-emerald-100 flex items-center justify-center">
-                      <Target className="h-4 w-4 text-emerald-600" />
-                    </div>
-                    <span className="text-sm font-bold text-[#1a1208]">Shinobi Precision</span>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3 mb-4">
-                    <div className="surface-emerald rounded-2xl p-3.5">
-                      <div className="text-xs text-emerald-700/60 mb-0.5">1st Attempt</div>
-                      <div className="font-display text-2xl font-bold text-emerald-800 tabular-nums">{stats.firstAttemptCount}</div>
-                      <div className="text-[11px] text-emerald-700/50">2× Score</div>
-                    </div>
-                    <div className="surface-gold rounded-2xl p-3.5">
-                      <div className="text-xs text-amber-700/60 mb-0.5">2nd Attempt</div>
-                      <div className="font-display text-2xl font-bold text-amber-800 tabular-nums">{stats.secondAttemptCount}</div>
-                      <div className="text-[11px] text-amber-700/50">Clutch</div>
+              /* ════ SHINOBI DOSSIER / STATS TAB ════ */
+              <div className="space-y-6">
+                {/* Shinobi Mastery Overview */}
+                <div className="surface-dark-card rounded-3xl p-6 sm:p-7 border border-white/15 shadow-xl">
+                  <div className="flex items-center justify-between mb-5">
+                    <div>
+                      <h2 className="font-display text-2xl sm:text-3xl font-bold uppercase text-white flex items-center gap-2">
+                        <Award className="h-6 w-6 text-orange-400" />
+                        <span>Shinobi Rank & Trials Mastery</span>
+                      </h2>
+                      <p className="text-xs text-white/50">
+                        Detailed track record across all 4 trial difficulties and 50 levels.
+                      </p>
                     </div>
                   </div>
 
-                  <div className="space-y-3.5">
-                    {[
-                      { label: 'Accuracy', value: animatedAccuracy, pct: stats.accuracyPercentage, fill: 'progress-fill-emerald', text: 'text-emerald-700' },
-                      { label: 'Completion', value: animatedCompletion, pct: stats.completionPercentage, fill: 'progress-fill-orange', text: 'text-orange-700', sub: `(${stats.totalCompleted}/50)` },
-                    ].map((s) => (
-                      <div key={s.label}>
-                        <div className="flex justify-between text-xs font-semibold mb-1.5">
-                          <span className="text-[#5c4a2e]">{s.label}</span>
-                          <span className={`font-mono tabular-nums ${s.text}`}>{s.value}% {s.sub ?? ''}</span>
-                        </div>
-                        <div className="progress-track h-2.5">
-                          <div className={`h-full ${s.fill} progress-bar-fill rounded-full transition-all duration-700`} style={{ width: `${s.pct}%` }} />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Stage Mastery */}
-                <div className="surface-card rounded-3xl p-5 sm:p-6">
-                  <div className="flex items-center gap-2.5 mb-4">
-                    <div className="h-8 w-8 rounded-xl bg-orange-100 flex items-center justify-center">
-                      <Shield className="h-4 w-4 text-orange-600" />
-                    </div>
-                    <span className="text-sm font-bold text-[#1a1208]">Stage Mastery</span>
-                  </div>
-
-                  <div className="space-y-3.5">
-                    {STAGES.map((stage) => {
-                      const bucket = stats.byDifficulty[stage.difficulty];
-                      const pct    = Math.round((bucket.completed / bucket.total) * 100);
+                  {/* Stage-by-Stage Breakdown Cards */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    {STAGES.map((stg) => {
+                      const diffStats = stats.byDifficulty[stg.difficulty];
+                      const isComplete = diffStats.completed === diffStats.total;
                       return (
-                        <div key={stage.difficulty}>
-                          <div className="flex items-baseline justify-between text-xs font-semibold mb-1.5">
-                            <span className="text-[#5c4a2e]">{stage.title} <span className="text-amber-700/40">({stage.difficulty})</span></span>
-                            <span className="font-mono text-[#5c4a2e] tabular-nums shrink-0 ml-2">{bucket.completed}/{bucket.total}</span>
+                        <div
+                          key={stg.difficulty}
+                          className={`rounded-2xl p-4 border transition-all ${
+                            isComplete
+                              ? 'bg-emerald-950/20 border-emerald-500/40 shadow-[0_0_15px_rgba(16,185,129,0.15)]'
+                              : 'bg-white/5 border-white/10'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-orange-400">
+                              {stg.rangeLabel}
+                            </span>
+                            <span
+                              className={`text-xs font-mono font-bold ${
+                                isComplete ? 'text-emerald-400' : 'text-white/60'
+                              }`}
+                            >
+                              {diffStats.completed}/{diffStats.total} Cleared
+                            </span>
                           </div>
-                          <div className="progress-track h-2">
-                            <div className="h-full rounded-full transition-all duration-700"
-                              style={{ width: `${pct}%`, backgroundColor: stage.accentHex, boxShadow: `0 0 6px ${stage.accentHex}80` }} />
+
+                          <h3 className="font-display text-lg font-bold uppercase text-white">
+                            {stg.title}
+                          </h3>
+                          <div className="text-[11px] text-white/50 mb-3">{stg.japaneseSubtitle}</div>
+
+                          <div className="progress-track h-2 mb-2 bg-white/10 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-gradient-to-r from-orange-500 to-amber-400 rounded-full"
+                              style={{
+                                width: `${Math.round((diffStats.completed / diffStats.total) * 100)}%`,
+                              }}
+                            />
+                          </div>
+
+                          <div className="flex items-center justify-between text-[11px] text-white/50">
+                            <span>1st Try (2X): {diffStats.firstAttempt}</span>
+                            <span>2nd Try: {diffStats.secondAttempt}</span>
                           </div>
                         </div>
                       );
                     })}
                   </div>
+                </div>
 
-                  <div className="mt-4 pt-4 divider-warm" />
-                  <div className="flex items-center justify-between text-xs text-amber-700/50 mt-3">
-                    <span className="flex items-center gap-1.5">
-                      <Award className="h-3.5 w-3.5 text-amber-500" />
-                      Highest Level: <strong className="font-mono text-[#5c4a2e] ml-1">Lv.{progress.highestUnlockedLevel}</strong>
-                    </span>
-                    <span className="font-mono">{progress.hasCompletedAll ? '🏆 Hokage' : 'Active Run'}</span>
+                {/* Performance Analytics Card */}
+                <div className="surface-dark-card rounded-3xl p-6 border border-white/15 shadow-xl">
+                  <h3 className="font-display text-xl font-bold uppercase text-white mb-4 flex items-center gap-2">
+                    <Target className="h-5 w-5 text-emerald-400" />
+                    <span>Trial Combat Metrics</span>
+                  </h3>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                    <div className="rounded-2xl bg-white/5 p-3.5 border border-white/10">
+                      <div className="font-mono text-2xl font-bold text-emerald-400">
+                        {stats.firstAttemptCount}
+                      </div>
+                      <div className="text-xs text-white/70 font-semibold mt-0.5">2X Multipliers</div>
+                      <div className="text-[10px] text-white/40">First-try answers</div>
+                    </div>
+
+                    <div className="rounded-2xl bg-white/5 p-3.5 border border-white/10">
+                      <div className="font-mono text-2xl font-bold text-amber-400">
+                        {stats.secondAttemptCount}
+                      </div>
+                      <div className="text-xs text-white/70 font-semibold mt-0.5">100pt Clears</div>
+                      <div className="text-[10px] text-white/40">Second-try recoveries</div>
+                    </div>
+
+                    <div className="rounded-2xl bg-white/5 p-3.5 border border-white/10">
+                      <div className="font-mono text-2xl font-bold text-red-400">
+                        {progress.totalWrongAnswers}
+                      </div>
+                      <div className="text-xs text-white/70 font-semibold mt-0.5">Wrong Attempts</div>
+                      <div className="text-[10px] text-white/40">Seals broken</div>
+                    </div>
+
+                    <div className="rounded-2xl bg-white/5 p-3.5 border border-white/10">
+                      <div className="font-mono text-2xl font-bold text-sky-400">
+                        {stats.accuracyPercentage}%
+                      </div>
+                      <div className="text-xs text-white/70 font-semibold mt-0.5">Overall Accuracy</div>
+                      <div className="text-[10px] text-white/40">Success ratio</div>
+                    </div>
                   </div>
                 </div>
               </div>

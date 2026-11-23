@@ -32,9 +32,18 @@ export function loadProfile(): PlayerProfile {
     const raw = window.localStorage.getItem(PROFILE_STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as Partial<PlayerProfile>;
-      const validAvatars: AvatarId[] = ['uzumaki', 'uchiha', 'kunoichi', 'sensei'];
-      const validFrames: ProfileFrameId[] = ['none', 'orange', 'gold', 'red', 'emerald', 'sky', 'rainbow'];
-      const validBanners: ProfileBannerId[] = ['default', 'fire', 'forest', 'storm', 'night', 'sakura'];
+      const validAvatars: AvatarId[] = [
+        'uzumaki', 'uchiha', 'kunoichi', 'sensei',
+        'sage', 'shadow', 'sand', 'yellowflash',
+      ];
+      const validFrames: ProfileFrameId[] = [
+        'none', 'orange', 'gold', 'red', 'emerald', 'sky', 'rainbow',
+        'wood', 'chunin', 'jonin', 'anbu', 'hokage', 'sage', 'celestial',
+      ];
+      const validBanners: ProfileBannerId[] = [
+        'default', 'fire', 'forest', 'storm', 'night', 'sakura',
+        'hokage_rock', 'valley_end',
+      ];
       const validAccents: ProfileAccentId[] = ['orange', 'red', 'gold', 'emerald', 'sky', 'purple'];
 
       const avatarId = validAvatars.includes(parsed.avatarId as AvatarId)
@@ -42,13 +51,14 @@ export function loadProfile(): PlayerProfile {
         : 'uzumaki';
       const frameId = validFrames.includes(parsed.frameId as ProfileFrameId)
         ? (parsed.frameId as ProfileFrameId)
-        : 'orange';
+        : 'hokage';
       const bannerId = validBanners.includes(parsed.bannerId as ProfileBannerId)
         ? (parsed.bannerId as ProfileBannerId)
         : 'default';
       const accentId = validAccents.includes(parsed.accentId as ProfileAccentId)
         ? (parsed.accentId as ProfileAccentId)
         : 'orange';
+      const avatarBgId = parsed.avatarBgId ?? 'fire';
 
       const profile: PlayerProfile = {
         playerId: typeof parsed.playerId === 'string' && parsed.playerId ? parsed.playerId : generateShinobiId(),
@@ -57,6 +67,7 @@ export function loadProfile(): PlayerProfile {
             ? parsed.playerName.trim().slice(0, 24)
             : 'Konoha Shinobi',
         avatarId,
+        avatarBgId,
         frameId,
         bannerId,
         accentId,
@@ -72,7 +83,8 @@ export function loadProfile(): PlayerProfile {
     playerId: generateShinobiId(),
     playerName: 'Konoha Shinobi',
     avatarId: 'uzumaki',
-    frameId: 'orange',
+    avatarBgId: 'fire',
+    frameId: 'hokage',
     bannerId: 'default',
     accentId: 'orange',
     createdAt: new Date().toISOString(),

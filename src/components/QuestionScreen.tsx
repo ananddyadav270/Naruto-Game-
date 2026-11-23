@@ -1,5 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { AlertCircle, CheckCircle2, Home, Zap } from 'lucide-react';
+import {
+  AlertCircle,
+  CheckCircle2,
+  HelpCircle,
+  Home,
+  Shield,
+  Sparkles,
+  Zap,
+} from 'lucide-react';
 import { getStageForLevel } from '../data/questions';
 import { QuizQuestion } from '../types/quiz';
 import { soundEngine } from '../utils/sound';
@@ -28,11 +36,11 @@ export const QuestionScreen: React.FC<QuestionScreenProps> = ({
 }) => {
   const [attemptsRemaining, setAttemptsRemaining] = useState<2 | 1 | 0>(2);
   const [eliminatedIndices, setEliminatedIndices] = useState<number[]>([]);
-  const [shakingIndex, setShakingIndex]           = useState<number | null>(null);
-  const [solvedState, setSolvedState]             = useState<'IDLE' | 'CORRECT' | 'FAILED'>('IDLE');
-  const [feedbackBanner, setFeedbackBanner]       = useState<string | null>(null);
+  const [shakingIndex, setShakingIndex] = useState<number | null>(null);
+  const [solvedState, setSolvedState] = useState<'IDLE' | 'CORRECT' | 'FAILED'>('IDLE');
+  const [feedbackBanner, setFeedbackBanner] = useState<string | null>(null);
   const transitionTimerRef = useRef<number | null>(null);
-  const failTimerRef       = useRef<number | null>(null);
+  const failTimerRef = useRef<number | null>(null);
 
   const stage = getStageForLevel(question.level);
 
@@ -44,23 +52,27 @@ export const QuestionScreen: React.FC<QuestionScreenProps> = ({
     setFeedbackBanner(null);
     return () => {
       if (transitionTimerRef.current) window.clearTimeout(transitionTimerRef.current);
-      if (failTimerRef.current)       window.clearTimeout(failTimerRef.current);
+      if (failTimerRef.current) window.clearTimeout(failTimerRef.current);
     };
   }, [question.level]);
 
   const handleSelectOption = (idx: number) => {
     if (solvedState !== 'IDLE') return;
     if (eliminatedIndices.includes(idx)) return;
-    const isCorrect    = idx === question.correctIndex;
+    const isCorrect = idx === question.correctIndex;
     const attemptUsed: 1 | 2 = attemptsRemaining === 2 ? 1 : 2;
 
     if (isCorrect) {
       setSolvedState('CORRECT');
-      setFeedbackBanner(attemptUsed === 1 ? '🎯 Perfect hit! 2× Bonus activated.' : '⚡ Recovered on second attempt!');
+      setFeedbackBanner(
+        attemptUsed === 1
+          ? '🎯 Bullseye! 2× First-Attempt Multiplier unlocked (+200 pts, +20 coins)'
+          : '⚡ Jutsu Successful! Recovered on second attempt (+100 pts, +10 coins)'
+      );
       soundEngine.playCorrect(attemptUsed === 1);
-      window.setTimeout(() => soundEngine.playCoinSparkle(), 160);
+      window.setTimeout(() => soundEngine.playCoinSparkle(), 150);
       onLevelComplete(question.level, attemptUsed);
-      transitionTimerRef.current = window.setTimeout(() => onShowLevelComplete(), 820);
+      transitionTimerRef.current = window.setTimeout(() => onShowLevelComplete(), 850);
       return;
     }
 
@@ -69,7 +81,7 @@ export const QuestionScreen: React.FC<QuestionScreenProps> = ({
       setAttemptsRemaining(1);
       setEliminatedIndices((prev) => [...prev, idx]);
       setShakingIndex(idx);
-      setFeedbackBanner('Not quite. 1 attempt remaining — think carefully!');
+      setFeedbackBanner('❌ Incorrect jutsu! 1 attempt remaining — observe carefully.');
       soundEngine.playWrong();
       window.setTimeout(() => setShakingIndex(null), 500);
     } else {
@@ -77,9 +89,9 @@ export const QuestionScreen: React.FC<QuestionScreenProps> = ({
       setEliminatedIndices((prev) => [...prev, idx]);
       setShakingIndex(idx);
       setSolvedState('FAILED');
-      setFeedbackBanner('Both attempts exhausted. The seals are shattered.');
+      setFeedbackBanner('💥 Both attempts exhausted. Your chakra has been depleted.');
       soundEngine.playGameOver();
-      failTimerRef.current = window.setTimeout(() => onGameOver(question.level), 700);
+      failTimerRef.current = window.setTimeout(() => onGameOver(question.level), 750);
     }
   };
 
@@ -87,125 +99,192 @@ export const QuestionScreen: React.FC<QuestionScreenProps> = ({
     const onKeyDown = (e: KeyboardEvent) => {
       if (solvedState !== 'IDLE') return;
       const key = e.key.toUpperCase();
-      const map: Record<string, number> = { '1': 0, '2': 1, '3': 2, '4': 3, A: 0, B: 1, C: 2, D: 3 };
+      const map: Record<string, number> = {
+        '1': 0,
+        '2': 1,
+        '3': 2,
+        '4': 3,
+        A: 0,
+        B: 1,
+        C: 2,
+        D: 3,
+      };
       if (key in map) handleSelectOption(map[key]);
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   });
 
-  const progressPct      = Math.round((completedCount / 50) * 100);
+  const progressPct = Math.round((completedCount / 50) * 100);
   const levelProgressPct = Math.round((question.level / 50) * 100);
-  const isFirst          = attemptsRemaining === 2;
+  const isFirst = attemptsRemaining === 2;
 
   return (
-    <div key={question.level} className="animate-screen-enter w-full" style={{ background: '#f5ede0', minHeight: 'calc(100dvh - 64px)' }}>
-      <div className="mx-auto max-w-3xl px-3 sm:px-5 py-4 sm:py-6">
-
-        {/* ── HUD Card ── */}
-        <div className="surface-card rounded-2xl p-3 sm:p-4 mb-4">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-
-            {/* Left: Home + Level */}
-            <div className="flex items-center gap-2 flex-wrap">
+    <div
+      key={question.level}
+      className="animate-screen-enter w-full py-4 sm:py-6"
+      style={{ minHeight: 'calc(100dvh - 64px)' }}
+    >
+      <div className="mx-auto max-w-4xl px-3 sm:px-6">
+        {/* ── TOP COMBAT HUD ── */}
+        <div className="surface-dark-card rounded-2xl p-3.5 sm:p-4 mb-4 border border-white/12 shadow-xl">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            {/* Left: Home + Level Badge */}
+            <div className="flex items-center gap-2.5 flex-wrap">
               <button
                 type="button"
                 onClick={onRequestHome}
-                className="btn-ghost inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer whitespace-nowrap"
+                className="btn-secondary inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold"
               >
-                <Home className="h-3.5 w-3.5 text-orange-500 shrink-0" />
-                <span>Home</span>
+                <Home className="h-3.5 w-3.5 text-orange-400" />
+                <span>Dashboard</span>
               </button>
 
               <div className="flex items-center gap-2">
-                <span className="font-display text-2xl sm:text-3xl font-bold tracking-wide uppercase text-[#1a1208] font-mono tabular-nums">
-                  Lv.{question.level}
+                <span className="font-display text-2xl sm:text-3xl font-bold uppercase text-white font-mono tabular-nums tracking-wide">
+                  Level {question.level}
                 </span>
-                <span className="hidden sm:inline text-amber-800/40">·</span>
-                <span className="hidden sm:inline text-xs font-bold text-orange-600">{question.difficulty}</span>
-                <span className="hidden md:inline text-amber-800/40">·</span>
-                <span className="hidden md:inline text-xs text-amber-800/60">{stage.title}</span>
+                <span className="text-white/20">|</span>
+                <span className="rounded-md bg-orange-500/15 border border-orange-500/30 px-2 py-0.5 text-xs font-bold text-orange-400">
+                  {question.difficulty}
+                </span>
+                <span className="hidden sm:inline text-xs text-white/50 font-medium">
+                  {stage.title}
+                </span>
               </div>
             </div>
 
-            {/* Right: Attempts */}
+            {/* Right: Sharingan Attempts Counter */}
             <div
-              className="flex items-center gap-2 rounded-xl px-3 py-2"
-              style={{ background: attemptsRemaining === 1 ? 'linear-gradient(135deg, #fff7ed, #fed7aa)' : '#fdf8f0', border: `2px solid ${attemptsRemaining === 1 ? '#f97316' : '#e8d5b7'}` }}
+              className={`flex items-center gap-2.5 rounded-xl px-3 py-1.5 border transition-all ${
+                attemptsRemaining === 2
+                  ? 'bg-white/5 border-white/15'
+                  : attemptsRemaining === 1
+                  ? 'bg-amber-500/20 border-amber-400/50 shadow-[0_0_15px_rgba(245,158,11,0.3)]'
+                  : 'bg-red-500/20 border-red-500/60 shadow-[0_0_15px_rgba(239,68,68,0.4)]'
+              }`}
               aria-live="polite"
             >
-              <div className="flex items-center gap-1">
-                <SharinganEmblem size={22} spinning={attemptsRemaining >= 1} shattered={attemptsRemaining < 1} />
-                <SharinganEmblem size={22} spinning={attemptsRemaining === 2} shattered={attemptsRemaining < 2} />
+              <div className="flex items-center gap-1.5">
+                <SharinganEmblem
+                  size={24}
+                  spinning={attemptsRemaining >= 1}
+                  shattered={attemptsRemaining < 1}
+                />
+                <SharinganEmblem
+                  size={24}
+                  spinning={attemptsRemaining === 2}
+                  shattered={attemptsRemaining < 2}
+                />
               </div>
-              <div className="text-xs font-bold whitespace-nowrap">
-                {attemptsRemaining === 2 && <span className="text-[#5c4a2e]">2 Attempts</span>}
-                {attemptsRemaining === 1 && <span className="text-orange-600">1 Attempt</span>}
-                {attemptsRemaining === 0 && <span className="text-red-600">None Left</span>}
+
+              <div className="text-xs font-bold">
+                {attemptsRemaining === 2 && (
+                  <span className="text-emerald-400">2 Attempts Left</span>
+                )}
+                {attemptsRemaining === 1 && (
+                  <span className="text-amber-300 animate-pulse">Final Attempt!</span>
+                )}
+                {attemptsRemaining === 0 && (
+                  <span className="text-red-400">Trial Depleted</span>
+                )}
               </div>
             </div>
           </div>
 
-          {/* Progress row */}
-          <div className="mt-3">
-            <div className="flex items-center justify-between text-xs text-amber-800/50 mb-1.5">
-              <span>Cleared: <strong className="text-[#5c4a2e] font-mono">{completedCount}/50</strong> ({progressPct}%)</span>
-              <span className={`flex items-center gap-1 font-semibold ${isFirst ? 'text-orange-600' : 'text-amber-700'}`}>
-                {isFirst && <Zap className="h-3 w-3" />}
-                {isFirst ? '200 pts · 20 coins (2×)' : '100 pts · 10 coins'}
+          {/* Progress & Reward Multiplier Bar */}
+          <div className="mt-3 pt-3 border-t border-white/8">
+            <div className="flex items-center justify-between text-xs mb-1.5">
+              <span className="text-white/60">
+                Cleared:{' '}
+                <strong className="text-white font-mono font-bold">
+                  {completedCount}/50
+                </strong>{' '}
+                ({progressPct}%)
+              </span>
+
+              <span
+                className={`flex items-center gap-1.5 font-bold ${
+                  isFirst ? 'text-amber-300' : 'text-orange-400'
+                }`}
+              >
+                <Zap className="h-3.5 w-3.5" />
+                <span>
+                  {isFirst
+                    ? '2X First-Attempt Bonus Active (+200 pts · 20 coins)'
+                    : 'Second Attempt (+100 pts · 10 coins)'}
+                </span>
               </span>
             </div>
-            <div className="progress-track h-2">
-              <div className="h-full progress-fill-orange progress-bar-fill rounded-full transition-all duration-700"
-                style={{ width: `${Math.max(levelProgressPct, 2)}%` }} />
+
+            <div className="progress-track h-2 bg-white/10 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-orange-500 via-amber-400 to-emerald-400 rounded-full transition-all duration-700"
+                style={{ width: `${Math.max(levelProgressPct, 2)}%` }}
+              />
             </div>
           </div>
         </div>
 
-        {/* ── Question Card ── */}
-        <div className="surface-card rounded-3xl overflow-hidden shadow-lg">
-          {/* Stage banner */}
-          <div className="relative h-20 sm:h-24 overflow-hidden">
-            <ImageWithFallback src={stage.imageSrc} alt={stage.title} className="h-full w-full object-cover opacity-80" />
-            <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.2), rgba(245,237,224,0.95))' }} />
-            <div className="absolute bottom-2 inset-x-0 px-5 flex items-center justify-between">
-              <span className="text-[10px] font-mono font-semibold text-amber-800/60">{stage.japaneseSubtitle}</span>
-              <span className="text-[10px] font-mono text-amber-800/50 tabular-nums">Q {question.level} of 50</span>
+        {/* ── QUESTION CARD (WARM CREAM HIGH CONTRAST) ── */}
+        <div className="surface-cream-card rounded-3xl overflow-hidden shadow-2xl relative">
+          {/* Stage Art Banner */}
+          <div className="relative h-20 sm:h-24 overflow-hidden border-b border-[#e2d2b7]">
+            <ImageWithFallback
+              src={stage.imageSrc}
+              alt={stage.title}
+              className="h-full w-full object-cover opacity-75"
+            />
+            <div
+              className="absolute inset-0"
+              style={{
+                background:
+                  'linear-gradient(to bottom, rgba(15,13,21,0.2) 0%, rgba(253,250,243,0.95) 100%)',
+              }}
+            />
+            <div className="absolute bottom-2.5 inset-x-0 px-5 sm:px-7 flex items-center justify-between">
+              <span className="text-xs font-mono font-bold text-[#6b5c46]">
+                {stage.title} · {stage.japaneseSubtitle}
+              </span>
+              <span className="text-xs font-mono font-bold text-[#c2410c] bg-orange-100/90 px-2.5 py-0.5 rounded-full border border-orange-200">
+                Trial {question.level} of 50
+              </span>
             </div>
           </div>
 
-          {/* Chakra FX */}
+          {/* Chakra Visual Effect overlays */}
           {solvedState === 'CORRECT' && <ChakraAuraBurst color="emerald" />}
-          {solvedState === 'FAILED'  && <ChakraAuraBurst color="red" />}
+          {solvedState === 'FAILED' && <ChakraAuraBurst color="red" />}
 
-          {/* Content */}
-          <div className="relative z-10 px-5 sm:px-7 pb-7 sm:pb-9 pt-5">
-
-            {/* Question text */}
-            <h2 className="text-base sm:text-xl lg:text-2xl font-semibold leading-snug text-[#1a1208] text-balance mb-5 sm:mb-6">
+          {/* Question & Options Area */}
+          <div className="relative z-10 px-5 sm:px-8 py-6 sm:py-8">
+            {/* Question Text */}
+            <h2 className="text-lg sm:text-2xl font-bold leading-relaxed text-[#1a1622] text-balance mb-6 sm:mb-8">
               {question.question}
             </h2>
 
-            {/* Options */}
-            <div className="grid grid-cols-1 gap-2.5 sm:gap-3" role="list">
+            {/* Answer Options Grid */}
+            <div className="grid grid-cols-1 gap-3 sm:gap-3.5" role="list">
               {question.options.map((optionText, idx) => {
-                const isEliminated    = eliminatedIndices.includes(idx);
-                const isShaking       = shakingIndex === idx;
-                const isCorrectChoice = solvedState === 'CORRECT' && idx === question.correctIndex;
-                const isDisabled      = isEliminated || solvedState !== 'IDLE';
+                const isEliminated = eliminatedIndices.includes(idx);
+                const isShaking = shakingIndex === idx;
+                const isCorrectChoice =
+                  solvedState === 'CORRECT' && idx === question.correctIndex;
+                const isDisabled = isEliminated || solvedState !== 'IDLE';
 
-                let cardCls = 'answer-idle';
-                let badgeCls = 'bg-amber-100 text-amber-800 border border-amber-200 group-hover:bg-orange-100 group-hover:border-orange-400 group-hover:text-orange-700';
+                let cardClass = 'option-idle';
+                let letterClass =
+                  'bg-amber-100/80 text-amber-900 border border-amber-300 group-hover:bg-orange-500 group-hover:border-orange-500 group-hover:text-white';
 
                 if (isCorrectChoice) {
-                  cardCls  = 'answer-correct';
-                  badgeCls = 'bg-emerald-500 text-white border border-emerald-400';
+                  cardClass = 'option-correct';
+                  letterClass = 'bg-emerald-600 text-white border border-emerald-500';
                 } else if (isEliminated) {
-                  cardCls  = 'answer-wrong';
-                  badgeCls = 'bg-red-200 text-red-700 border border-red-300';
+                  cardClass = 'option-wrong';
+                  letterClass = 'bg-red-200 text-red-800 border border-red-400';
                 } else if (solvedState !== 'IDLE') {
-                  cardCls  = 'answer-disabled';
-                  badgeCls = 'bg-amber-50 text-amber-400 border border-amber-100';
+                  cardClass = 'option-disabled';
+                  letterClass = 'bg-gray-200 text-gray-500 border border-gray-300';
                 }
 
                 return (
@@ -215,19 +294,34 @@ export const QuestionScreen: React.FC<QuestionScreenProps> = ({
                     disabled={isDisabled}
                     onClick={() => handleSelectOption(idx)}
                     role="listitem"
-                    className={`group w-full min-h-[52px] sm:min-h-[62px] rounded-2xl border px-3 sm:px-4 py-3 sm:py-3.5 text-left flex items-center gap-3 sm:gap-4 ${cardCls} ${
+                    className={`group w-full min-h-[58px] sm:min-h-[66px] rounded-2xl px-4 sm:px-5 py-3.5 text-left flex items-center gap-3.5 sm:gap-4 cursor-pointer ${cardClass} ${
                       isShaking ? 'animate-wrong-shake' : ''
                     }`}
                   >
-                    <span className={`flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg font-mono text-sm font-bold transition-all ${badgeCls}`}>
+                    {/* Option Letter Badge */}
+                    <span
+                      className={`flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl font-mono text-sm sm:text-base font-bold transition-all shadow-sm ${letterClass}`}
+                    >
                       {OPTION_LETTERS[idx]}
                     </span>
-                    <span className="flex-1 text-sm sm:text-base font-semibold leading-snug">{optionText}</span>
-                    {isCorrectChoice && <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-500 animate-bounce-in" />}
-                    {isEliminated    && <AlertCircle  className="h-5 w-5 shrink-0 text-red-400" />}
+
+                    {/* Option Text */}
+                    <span className="flex-1 text-sm sm:text-base font-semibold leading-snug">
+                      {optionText}
+                    </span>
+
+                    {/* Result Icons */}
+                    {isCorrectChoice && (
+                      <CheckCircle2 className="h-6 w-6 shrink-0 text-emerald-600 animate-bounce-in" />
+                    )}
+                    {isEliminated && (
+                      <AlertCircle className="h-6 w-6 shrink-0 text-red-500" />
+                    )}
+
+                    {/* Keyboard Shortcut Key Indicator */}
                     {!isDisabled && solvedState === 'IDLE' && (
-                      <kbd className="hidden lg:flex h-5 w-5 items-center justify-center rounded text-[10px] font-mono text-amber-600/50 shrink-0 bg-amber-50 border border-amber-200">
-                        {OPTION_LETTERS[idx]}
+                      <kbd className="hidden lg:flex h-6 px-2 items-center justify-center rounded-lg text-[11px] font-mono text-amber-800/50 shrink-0 bg-amber-50 border border-amber-200 shadow-xs">
+                        {idx + 1}
                       </kbd>
                     )}
                   </button>
@@ -235,24 +329,25 @@ export const QuestionScreen: React.FC<QuestionScreenProps> = ({
               })}
             </div>
 
-            {/* Feedback Banner */}
+            {/* Live Feedback Banner */}
             {feedbackBanner && (
               <div
                 key={feedbackBanner}
                 role="status"
                 aria-live="polite"
-                className={`animate-slide-up mt-4 rounded-2xl border p-3.5 flex items-start gap-2.5 text-sm font-semibold ${
+                className={`animate-screen-enter mt-5 rounded-2xl border p-4 flex items-center gap-3 text-sm font-bold shadow-md ${
                   solvedState === 'CORRECT'
-                    ? 'surface-emerald text-emerald-800'
+                    ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
                     : solvedState === 'FAILED'
-                    ? 'surface-red text-red-800'
-                    : 'surface-orange text-orange-800'
+                    ? 'bg-red-50 border-red-300 text-red-800'
+                    : 'bg-amber-50 border-amber-300 text-amber-800'
                 }`}
               >
-                {solvedState === 'CORRECT'
-                  ? <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
-                  : <AlertCircle  className="h-4 w-4 text-red-500 shrink-0 mt-0.5" />
-                }
+                {solvedState === 'CORRECT' ? (
+                  <Sparkles className="h-5 w-5 text-emerald-600 shrink-0" />
+                ) : (
+                  <AlertCircle className="h-5 w-5 text-red-600 shrink-0" />
+                )}
                 <span>{feedbackBanner}</span>
               </div>
             )}

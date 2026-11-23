@@ -1,10 +1,9 @@
 import React from 'react';
-import { Award, Check, Home, RotateCcw, Star, Target, Trophy } from 'lucide-react';
-import { getAvatarById } from '../data/avatars';
+import { Award, Check, Home, RotateCcw, Sparkles, Star, Target, Trophy } from 'lucide-react';
 import { STAGES } from '../data/questions';
 import { PlayerProfile, SavedProgress } from '../types/quiz';
-import { computeQuizStats } from '../utils/storage';
 import { getAccentClasses } from '../utils/profileUtils';
+import { computeQuizStats } from '../utils/storage';
 import { useAnimatedNumber } from '../utils/useAnimatedNumber';
 import {
   ChakraGemIcon,
@@ -12,8 +11,8 @@ import {
   KonohaLeafSymbol,
   RankBadge,
   SharinganEmblem,
+  ShinobiAvatarDisplay,
   ShinobiCoinIcon,
-  WarmDivider,
 } from './ShinobiGraphics';
 
 interface VictoryScreenProps {
@@ -24,132 +23,218 @@ interface VictoryScreenProps {
 }
 
 export const VictoryScreen: React.FC<VictoryScreenProps> = ({
-  profile, progress, onPlayAgain, onGoHome,
+  profile,
+  progress,
+  onPlayAgain,
+  onGoHome,
 }) => {
-  const stats       = computeQuizStats(progress);
+  const stats = computeQuizStats(progress);
   const hokageStage = STAGES[3];
-  const avatar      = getAvatarById(profile.avatarId);
-  const accent      = getAccentClasses(profile.accentId);
+  const accent = getAccentClasses(profile.accentId);
 
   const animatedScore = useAnimatedNumber(progress.totalScore, 1000);
   const animatedCoins = useAnimatedNumber(progress.totalCoins, 1000);
-  const animatedGems  = useAnimatedNumber(progress.totalGems, 1000);
+  const animatedGems = useAnimatedNumber(progress.totalGems, 1000);
 
   return (
-    <div className="animate-screen-enter w-full" style={{ background: '#f5ede0' }}>
-
-      {/* ═══ VICTORY HERO ═══ */}
-      <div className="relative overflow-hidden" style={{ minHeight: '480px' }}>
+    <div className="animate-screen-enter w-full pb-16">
+      {/* ═══ HOKAGE INAUGURATION HERO ═══ */}
+      <div className="relative overflow-hidden border-b border-amber-500/30" style={{ minHeight: '520px' }}>
         <ImageWithFallback
           src={hokageStage.imageSrc}
           alt="Hokage Summit Victory"
-          className="absolute inset-0 h-full w-full object-cover"
+          className="absolute inset-0 h-full w-full object-cover filter blur-[0.5px] scale-105"
         />
-        <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(10,8,2,0.5) 0%, rgba(26,18,8,0.8) 50%, rgba(26,18,8,0.97) 100%)' }} />
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              'linear-gradient(to bottom, rgba(14,10,20,0.6) 0%, rgba(26,17,34,0.88) 55%, #0f0d15 100%)',
+          }}
+        />
 
-        {/* Stars */}
-        {[0,1,2].map((i) => (
-          <div key={i} className="pointer-events-none absolute animate-float-y" aria-hidden="true"
-            style={{ top: `${10 + i * 15}%`, right: `${5 + i * 8}%`, animationDelay: `${i * 1.1}s` }}>
-            <Star className={`text-amber-300/30 fill-current h-${4 + i * 2} w-${4 + i * 2}`} />
+        {/* Floating Golden Stars */}
+        {[0, 1, 2, 3].map((i) => (
+          <div
+            key={i}
+            className="pointer-events-none absolute animate-float-y"
+            aria-hidden="true"
+            style={{
+              top: `${12 + i * 14}%`,
+              right: `${8 + i * 12}%`,
+              animationDelay: `${i * 0.9}s`,
+            }}
+          >
+            <Star className="text-amber-300/40 fill-current h-6 w-6" />
           </div>
         ))}
 
-        {/* Sharingan decoration */}
-        <div className="pointer-events-none absolute top-6 left-6 opacity-8 animate-sharingan" aria-hidden="true">
-          <SharinganEmblem size={120} spinning />
+        {/* Grand Spinning Sharingan */}
+        <div
+          className="pointer-events-none absolute top-6 left-6 opacity-15 filter blur-[0.5px]"
+          aria-hidden="true"
+        >
+          <SharinganEmblem size={180} spinning />
         </div>
 
-        {/* Identity */}
-        <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 py-14 sm:py-20 flex flex-col items-center text-center">
-          <div className="flex items-center gap-4 mb-5">
-            <div className={`h-14 w-14 sm:h-16 sm:w-16 overflow-hidden rounded-2xl border-3 ${accent.borderClass} shadow-lg`}>
-              <ImageWithFallback src={avatar.imageSrc} alt={profile.playerName} className="h-full w-full object-cover" />
-            </div>
-            <div className="flex items-center gap-2 text-amber-400">
-              <KonohaLeafSymbol size={22} />
-              <Award className="h-6 w-6" />
-            </div>
+        {/* Central Identity & Celebration */}
+        <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 py-14 sm:py-20 flex flex-col items-center text-center">
+          <div className="mb-5 flex items-center justify-center">
+            <ShinobiAvatarDisplay
+              avatarId={profile.avatarId}
+              avatarBgId={profile.avatarBgId}
+              frameId="hokage"
+              size="xl"
+              showAura
+            />
           </div>
 
-          <div className="text-xs font-bold uppercase tracking-widest text-amber-300/70 mb-2">
-            {profile.playerName} · {profile.playerId}
+          <div className="mb-3 flex items-center gap-2">
+            <RankBadge rank="Hokage" />
+            <span className="font-mono text-xs text-amber-300/80">
+              {profile.playerName} · {profile.playerId}
+            </span>
           </div>
 
-          <h1 className="font-display text-5xl sm:text-6xl lg:text-7xl font-bold uppercase text-white tracking-tight text-balance animate-victory-glow mb-3"
-            style={{ textShadow: '0 2px 20px rgba(245,158,11,0.4)' }}>
-            Congratulations,<br />Hokage!
+          <h1
+            className="font-display text-5xl sm:text-7xl lg:text-8xl font-bold uppercase text-white tracking-tight text-balance animate-victory-halo mb-4"
+          >
+            Congratulations,<br />
+            <span className="text-gold-shimmer">Hokage!</span>
           </h1>
 
-          <p className="text-orange-100/70 text-sm sm:text-base max-w-lg mb-5">
-            You conquered all 50 levels of the Naruto Ultimate Quiz and claimed the highest shinobi rank of Konoha.
+          <p className="text-white/80 text-sm sm:text-lg max-w-xl mb-6 leading-relaxed">
+            You conquered all 50 Shinobi Trials of the Naruto Ultimate Quiz, proving your complete mastery of Hidden Leaf lore and ascending to the peak of the ninja world.
           </p>
 
-          <RankBadge rank="Hokage" />
-
-          {/* Stats strip */}
-          <div className="mt-8 grid grid-cols-3 sm:grid-cols-6 gap-3 w-full max-w-3xl">
+          {/* 6 Combat Metrics Strip */}
+          <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 w-full max-w-4xl">
             {[
-              { icon: <Trophy className="h-4 w-4 text-orange-400" />, label: 'Score',    value: animatedScore.toLocaleString(), color: 'text-white' },
-              { icon: <ShinobiCoinIcon size={16} />,                   label: 'Coins',    value: animatedCoins.toLocaleString(), color: 'text-amber-300' },
-              { icon: <ChakraGemIcon size={16} />,                     label: 'Gems',     value: animatedGems.toLocaleString(),  color: 'text-sky-300' },
-              { icon: null, label: '1st Try',   value: String(stats.firstAttemptCount),  color: 'text-emerald-300' },
-              { icon: null, label: '2nd Try',   value: String(stats.secondAttemptCount), color: 'text-orange-300' },
-              { icon: <Target className="h-4 w-4 text-emerald-400" />, label: 'Accuracy', value: `${stats.accuracyPercentage}%`, color: 'text-emerald-300' },
+              {
+                icon: <Trophy className="h-4 w-4 text-orange-400" />,
+                label: 'Final Score',
+                value: animatedScore.toLocaleString(),
+                color: 'text-white',
+              },
+              {
+                icon: <ShinobiCoinIcon size={16} />,
+                label: 'Total Coins',
+                value: animatedCoins.toLocaleString(),
+                color: 'text-amber-300',
+              },
+              {
+                icon: <ChakraGemIcon size={16} />,
+                label: 'Total Gems',
+                value: animatedGems.toLocaleString(),
+                color: 'text-sky-300',
+              },
+              {
+                icon: <Sparkles className="h-4 w-4 text-emerald-400" />,
+                label: '1st Try (2×)',
+                value: String(stats.firstAttemptCount),
+                color: 'text-emerald-400',
+              },
+              {
+                icon: null,
+                label: '2nd Try Clears',
+                value: String(stats.secondAttemptCount),
+                color: 'text-amber-400',
+              },
+              {
+                icon: <Target className="h-4 w-4 text-sky-400" />,
+                label: 'Overall Accuracy',
+                value: `${stats.accuracyPercentage}%`,
+                color: 'text-sky-300',
+              },
             ].map((s, i) => (
-              <div key={i} className="rounded-2xl px-3 py-3 text-center"
-                style={{ background: 'rgba(253,248,240,0.1)', border: '1px solid rgba(253,248,240,0.12)' }}>
+              <div
+                key={i}
+                className="surface-dark-card rounded-2xl p-3.5 text-center border border-white/12 shadow-md"
+              >
                 {s.icon && <div className="flex justify-center mb-1">{s.icon}</div>}
-                <div className={`font-mono text-lg sm:text-xl font-bold tabular-nums ${s.color}`}>{s.value}</div>
-                <div className="text-[10px] text-orange-200/40 mt-0.5">{s.label}</div>
+                <div className={`font-mono text-xl sm:text-2xl font-bold tabular-nums ${s.color}`}>
+                  {s.value}
+                </div>
+                <div className="text-[10px] text-white/50 uppercase font-semibold mt-0.5">
+                  {s.label}
+                </div>
               </div>
             ))}
           </div>
         </div>
       </div>
 
-      {/* ═══ BREAKDOWN SECTION ═══ */}
-      <div className="bg-[#f5ede0] py-10 sm:py-14">
+      {/* ═══ 50 TRIALS BREAKDOWN SECTION ═══ */}
+      <div className="py-12 sm:py-16">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="text-center mb-8">
-            <h2 className="font-display text-3xl sm:text-4xl font-bold uppercase text-[#1a1208]">Shinobi Path Review</h2>
+            <h2 className="font-display text-3xl sm:text-4xl font-bold uppercase text-white mb-2">
+              Shinobi Trials Record
+            </h2>
+            <p className="text-sm text-white/60">
+              Complete review of all 50 conquered trials across each stage.
+            </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {STAGES.map((stage) => {
-              const diff   = stats.byDifficulty[stage.difficulty];
-              const levels = Array.from({ length: stage.endLevel - stage.startLevel + 1 }, (_, i) => stage.startLevel + i);
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-10">
+            {STAGES.map((stg) => {
+              const diffStats = stats.byDifficulty[stg.difficulty];
+              const levels = Array.from(
+                { length: stg.endLevel - stg.startLevel + 1 },
+                (_, i) => stg.startLevel + i
+              );
+
               return (
-                <div key={stage.difficulty} className="surface-card rounded-3xl overflow-hidden">
-                  <div className="relative h-16 overflow-hidden">
-                    <ImageWithFallback src={stage.imageSrc} alt={stage.title} className="absolute inset-0 h-full w-full object-cover" />
-                    <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.5)' }} />
+                <div
+                  key={stg.difficulty}
+                  className="surface-dark-card rounded-3xl overflow-hidden border border-white/12 shadow-xl"
+                >
+                  <div className="relative h-18 overflow-hidden">
+                    <ImageWithFallback
+                      src={stg.imageSrc}
+                      alt={stg.title}
+                      className="absolute inset-0 h-full w-full object-cover opacity-60"
+                    />
+                    <div
+                      className="absolute inset-0"
+                      style={{ background: 'linear-gradient(to right, rgba(0,0,0,0.85), rgba(0,0,0,0.5))' }}
+                    />
                     <div className="absolute inset-0 flex items-center px-5 justify-between">
                       <div>
-                        <div className="text-[10px] font-bold uppercase tracking-widest text-white/50">{stage.difficulty}</div>
-                        <h3 className="font-display text-xl font-bold uppercase text-white">{stage.title}</h3>
+                        <div className="text-[10px] font-mono font-bold uppercase tracking-widest text-orange-400">
+                          {stg.difficulty} · {stg.rangeLabel}
+                        </div>
+                        <h3 className="font-display text-xl font-bold uppercase text-white">
+                          {stg.title}
+                        </h3>
                       </div>
                       <div className="text-right">
-                        <div className="font-mono text-sm font-bold text-white">{diff.completed}/{diff.total}</div>
-                        <div className="text-[10px] text-white/40">1st: {diff.firstAttempt} · 2nd: {diff.secondAttempt}</div>
+                        <div className="font-mono text-sm font-bold text-white">
+                          {diffStats.completed}/{diffStats.total}
+                        </div>
+                        <div className="text-[10px] text-white/50">
+                          1st: {diffStats.firstAttempt} · 2nd: {diffStats.secondAttempt}
+                        </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="p-4 sm:p-5">
-                    <div className="grid grid-cols-5 gap-1.5">
+                  <div className="p-4 sm:p-5 bg-[#14111d]">
+                    <div className="grid grid-cols-5 gap-2">
                       {levels.map((lvl) => {
-                        const outcome  = progress.levelOutcomes[lvl];
+                        const outcome = progress.levelOutcomes[lvl];
                         const isSecond = outcome?.attemptSolved === 2;
                         return (
-                          <div key={lvl} title={`Level ${lvl} — Attempt ${outcome?.attemptSolved ?? 1}`}
-                            className={`h-9 rounded-xl border font-mono text-xs font-bold flex items-center justify-center gap-0.5 ${
+                          <div
+                            key={lvl}
+                            className={`h-10 rounded-xl border font-mono text-xs font-bold flex items-center justify-center gap-1 shadow-sm ${
                               isSecond
-                                ? 'surface-gold text-amber-800 border-amber-300'
-                                : 'surface-emerald text-emerald-800 border-emerald-300'
-                            }`}>
+                                ? 'bg-amber-500/20 text-amber-300 border-amber-400/40'
+                                : 'bg-emerald-500/20 text-emerald-300 border-emerald-400/40'
+                            }`}
+                          >
                             <span>{lvl}</span>
-                            <Check className="h-2.5 w-2.5" />
+                            <Check className="h-3 w-3 stroke-[3]" />
                           </div>
                         );
                       })}
@@ -160,27 +245,26 @@ export const VictoryScreen: React.FC<VictoryScreenProps> = ({
             })}
           </div>
 
-          {/* Legend */}
-          <div className="mt-5 flex items-center justify-center gap-6 text-xs text-amber-800/50">
-            <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded bg-emerald-200 border border-emerald-400" />1st attempt (2×)</span>
-            <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded bg-amber-200 border border-amber-400" />2nd attempt</span>
-          </div>
-
-          {/* Play Again */}
-          <div className="mt-10 flex flex-wrap justify-center gap-3">
-            <button type="button" onClick={onPlayAgain}
-              className="btn-gold inline-flex items-center gap-2.5 px-8 py-4 rounded-2xl font-bold text-base cursor-pointer">
-              <RotateCcw className="h-4 w-4 shrink-0" />
-              <span>Play Again</span>
+          {/* Action CTAs */}
+          <div className="flex flex-wrap justify-center gap-4">
+            <button
+              type="button"
+              onClick={onPlayAgain}
+              className="btn-gold inline-flex items-center gap-2.5 px-8 py-4 rounded-2xl font-bold text-base cursor-pointer shadow-2xl"
+            >
+              <RotateCcw className="h-4 w-4" />
+              <span>Play Again / Reset Trials</span>
             </button>
-            <button type="button" onClick={onGoHome}
-              className="btn-ghost inline-flex items-center gap-2 px-7 py-4 rounded-2xl font-semibold text-base cursor-pointer">
-              <Home className="h-4 w-4 shrink-0" />
-              <span>Home</span>
+
+            <button
+              type="button"
+              onClick={onGoHome}
+              className="btn-secondary inline-flex items-center gap-2 px-7 py-4 rounded-2xl font-semibold text-base cursor-pointer"
+            >
+              <Home className="h-4 w-4" />
+              <span>Return to Dashboard</span>
             </button>
           </div>
-
-          <WarmDivider />
         </div>
       </div>
     </div>

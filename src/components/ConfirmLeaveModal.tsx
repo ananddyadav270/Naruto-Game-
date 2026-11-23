@@ -9,11 +9,16 @@ interface ConfirmLeaveModalProps {
 }
 
 export const ConfirmLeaveModal: React.FC<ConfirmLeaveModalProps> = ({
-  isOpen, currentLevel, onConfirmLeave, onCancel,
+  isOpen,
+  currentLevel,
+  onConfirmLeave,
+  onCancel,
 }) => {
   useEffect(() => {
     if (!isOpen) return;
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onCancel(); };
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onCancel();
+    };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [isOpen, onCancel]);
@@ -22,46 +27,57 @@ export const ConfirmLeaveModal: React.FC<ConfirmLeaveModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(6px)' }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md"
       onClick={onCancel}
       role="dialog"
       aria-modal="true"
       aria-labelledby="leave-title"
     >
       <div
-        className="animate-scale-in surface-card w-full max-w-md rounded-3xl p-6 shadow-2xl"
-        style={{ boxShadow: '0 24px 60px rgba(249,115,22,0.15)' }}
+        className="animate-modal-enter surface-dark-card w-full max-w-md rounded-3xl p-6 sm:p-7 shadow-2xl border border-white/15"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3 mb-4">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-orange-100 border border-orange-200 flex items-center justify-center shrink-0">
-              <Home className="h-5 w-5 text-orange-500" />
+            <div className="h-11 w-11 rounded-2xl bg-orange-500/20 border border-orange-500/40 flex items-center justify-center shrink-0">
+              <Home className="h-5 w-5 text-orange-400" />
             </div>
-            <h2 id="leave-title" className="font-display text-2xl tracking-wide text-[#1a1208] uppercase">
-              Return Home?
-            </h2>
+            <div>
+              <h2 id="leave-title" className="font-display text-2xl font-bold tracking-wide text-white uppercase">
+                Return to Dashboard?
+              </h2>
+              <span className="text-xs text-white/50">Current Trial: Level {currentLevel}</span>
+            </div>
           </div>
-          <button type="button" onClick={onCancel} aria-label="Stay"
-            className="p-1.5 rounded-lg text-amber-700/50 hover:text-[#1a1208] hover:bg-amber-100 transition-colors cursor-pointer">
+          <button
+            type="button"
+            onClick={onCancel}
+            aria-label="Stay"
+            className="p-1.5 rounded-xl text-white/50 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+          >
             <X className="h-4 w-4" />
           </button>
         </div>
 
-        <p className="text-sm leading-relaxed text-[#5c4a2e] mb-6">
-          Your progress, score, coins and gems are saved automatically. You can resume{' '}
-          <strong className="text-orange-600">Level {currentLevel}</strong> anytime from the dashboard.
+        <p className="text-sm leading-relaxed text-white/70 mb-6 font-medium">
+          Your progress, score, coins, and gems are saved automatically. You can jump back into{' '}
+          <strong className="text-orange-400 font-bold">Level {currentLevel}</strong> anytime from the mission map.
         </p>
 
-        <div className="flex gap-2.5">
-          <button type="button" onClick={onCancel}
-            className="btn-ghost flex-1 px-4 py-2.5 rounded-2xl text-sm font-semibold cursor-pointer">
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="btn-secondary flex-1 px-4 py-3 rounded-2xl text-sm font-semibold cursor-pointer text-center"
+          >
             Keep Playing
           </button>
-          <button type="button" onClick={onConfirmLeave}
-            className="btn-primary flex-1 px-4 py-2.5 rounded-2xl text-sm font-bold cursor-pointer text-center">
-            Return Home
+          <button
+            type="button"
+            onClick={onConfirmLeave}
+            className="btn-primary flex-1 px-4 py-3 rounded-2xl text-sm font-bold cursor-pointer text-center"
+          >
+            Leave to Home
           </button>
         </div>
       </div>
